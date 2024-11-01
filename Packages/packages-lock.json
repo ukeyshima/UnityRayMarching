@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "com.ukeyshima.unityraymarching": {
+      "version": "file:com.ukeyshima.unityraymarching",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    }
+  }
+}

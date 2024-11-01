@@ -1,0 +1,15 @@
+{
+  "name": "com.ukeyshima.unityraymarching",
+  "version": "1.0.0",
+  "displayName": "UnityRayMarching",
+  "description": "Ray Marching for Unity",
+  "unity": "2021.3",
+  "samples": [
+    {
+      "displayName": "Sample",
+      "description": "Sample",
+      "path": "Sample"
+    }
+  ],
+  "type": "library"
+}
