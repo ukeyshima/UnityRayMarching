@@ -63,7 +63,10 @@ namespace UnityRayMarching
                 data.BackBuffer = new RenderTexture(source.descriptor);
             }
 
-            Graphics.Blit(null, data.BackBuffer, _material);
+            RenderTexture temp = RenderTexture.GetTemporary(source.descriptor);
+            Graphics.Blit(null, temp, _material);
+            Graphics.Blit(temp, data.BackBuffer);
+            RenderTexture.ReleaseTemporary(temp);
 
             if(_postProcessMaterial == null)
             {
