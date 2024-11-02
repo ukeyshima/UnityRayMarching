@@ -63,14 +63,14 @@ namespace UnityRayMarching
                 data.BackBuffer = new RenderTexture(source.descriptor);
             }
 
+            Graphics.Blit(null, data.BackBuffer, _material);
+
             if(_postProcessMaterial == null)
             {
-                Graphics.Blit(data.BackBuffer, source, _material);
-                Graphics.Blit(source, data.BackBuffer);
+                Graphics.Blit(data.BackBuffer, source);
             }
             else
             {
-                Graphics.Blit(source, data.BackBuffer, _material);
                 Graphics.Blit(data.BackBuffer, source, _postProcessMaterial);
             }
         }
