@@ -2,7 +2,8 @@
 
 Ray Marching for Unity
 
-![ScreenShot](https://github.com/user-attachments/assets/44295202-dc82-4dc4-a206-abb7bd8590bd)
+<img width="480" height="270" src="https://github.com/user-attachments/assets/44295202-dc82-4dc4-a206-abb7bd8590bd">
+<img width="480" height="270" src="https://github.com/user-attachments/assets/a03391b5-60c2-4ca6-903d-7509291e2106">
 
 This project provides libraries and samples for RayMarching in Unity.
 
@@ -15,4 +16,6 @@ Enter the following url and click the add button.
 https://github.com/ukeyshima/UnityRayMarching.git?path=/Packages/com.ukeyshima.unityraymarching
 ```
 
-![スクリーンショット 2024-11-03 12 50 38](https://github.com/user-attachments/assets/0716d0d2-d476-4d45-ad46-92f473211d50)
+If want to see sample scene, please download from Samples.
+
+![Screenshot](https://github.com/user-attachments/assets/0716d0d2-d476-4d45-ad46-92f473211d50)
