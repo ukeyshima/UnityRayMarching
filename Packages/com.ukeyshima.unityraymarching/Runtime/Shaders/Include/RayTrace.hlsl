@@ -114,7 +114,7 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, int stepCount, float maxD
             float3 brdf;
             float pdf;
             if(r > 0.99) {
-                rd = ImportanceSampleLambert(rand, n);
+                rd = SampleHemiSphere(rand, n);
                 brdf = LambertBRDF(c);
                 pdf = LambertPDF(n, rd);
             }else{

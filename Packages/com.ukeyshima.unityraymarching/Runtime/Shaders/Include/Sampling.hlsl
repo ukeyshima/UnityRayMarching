@@ -31,16 +31,4 @@ float3 ImportanceSampleGGX(float2 xi, float roughness, float3 n, float3 v)
     return reflect(v, tangentX * h.x + tangentY * h.y + n * h.z);
 }
 
-float3 ImportanceSampleLambert(float2 xi, float3 n)
-{
-    float phi = 2.0 * PI * xi.x;
-    float cosTheta = sqrt(1.0f - xi.x);
-    float sinTheta = sqrt(xi.y);
-    float3 h = float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
-    float3 up = abs(n.z) < 0.999 ? float3(0, 0, 1) : float3(1, 0, 0);
-    float3 tangentX = CROSS(up, n);
-    float3 tangentY = CROSS(n, tangentX);
-    return tangentX * h.x + tangentY * h.y + n * h.z;
-}
-
 #endif
