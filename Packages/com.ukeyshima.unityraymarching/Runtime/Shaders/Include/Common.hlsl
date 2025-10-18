@@ -1,7 +1,9 @@
 #ifndef COMMON_INCLUDED
 #define COMMON_INCLUDED
 
+#ifndef EPS
 #define EPS 0.005
+#endif
 #define FLOAT_MAX float(0xffffffffu)
 #define MOD(A, B) (A - B * floor(A / B))
 #define MIN2(A) (min(A.x, A.y))
