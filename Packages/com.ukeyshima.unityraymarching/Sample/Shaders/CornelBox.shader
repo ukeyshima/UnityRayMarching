@@ -79,14 +79,15 @@ Shader "Hidden/CornelBox"
 
             #define MAP(P) Map(P)
             #define GET_MATERIAL(S, RP) (materials[s.objectId])
+            #define STEP_COUNT (marchingStep)
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayTrace.hlsl"
 
             #ifdef _RAYMARCHING_UNLIT
-                #define SAMPLE_RADIANCE(RO, RD, COL) Unlit(RO, RD, COL, marchingStep, maxDistance)
+                #define SAMPLE_RADIANCE(RO, RD, COL) Unlit(RO, RD, COL, maxDistance)
             #elif _RAYMARCHING_BASIC
-                #define SAMPLE_RADIANCE(RO, RD, COL) Diffuse(RO, RD, COL, marchingStep, maxDistance)
+                #define SAMPLE_RADIANCE(RO, RD, COL) Diffuse(RO, RD, COL, maxDistance)
             #elif _RAYMARCHING_PATHTRACE
-                #define SAMPLE_RADIANCE(RO, RD, COL) PathTrace(RO, RD, COL, marchingStep, maxDistance, iterMax, bounceLimit, _FrameCount)
+                #define SAMPLE_RADIANCE(RO, RD, COL) PathTrace(RO, RD, COL, maxDistance, iterMax, bounceLimit)
             #endif
 
             float4 frag (v2f i) : SV_Target
