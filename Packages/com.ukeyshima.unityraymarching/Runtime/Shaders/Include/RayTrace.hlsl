@@ -80,23 +80,9 @@ void CalcBRDFAndPDF(float r, float3 n, float3 v, float3 c, float3 rd, out float3
 
 void CalcBRDFAndPDF(float2 xi, float r, float3 n, float3 v, float3 c, inout float3 rd, out float3 brdf, out float pdf)
 {
-    if (r <= REFLECT_THRESHOLD)
-    {
-        rd = reflect(rd, n); 
-    }
-    else if(r > LAMBERT_THRESHOLD)
-    {
-        rd = SampleHemiSphere(xi, n);
-    }
-    else
-    {
-        rd = ImportanceSampleGGX(xi, r, n, rd);
-        if (dot(rd, n) < 0.0) {
-            brdf = OOO;
-            pdf = 0.0;
-            return;
-        }
-    }
+    if (r <= REFLECT_THRESHOLD) { rd = reflect(rd, n); }
+    else if(r > LAMBERT_THRESHOLD) { rd = SampleHemiSphere(xi, n); }
+    else { rd = ImportanceSampleGGX(xi, r, n, rd); }
     CalcBRDFAndPDF(r, n, v, c, rd, brdf, pdf);
 }
 
@@ -163,8 +149,8 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, float maxDistance, int it
                 }   
             }
             
-            acc += e * weight;
-            weight *= brdf / pdf * max(dot(rd, n), 0.0) * w;
+            acc += e * weight * w;
+            weight *= brdf / pdf * max(dot(rd, n), 0.0);
             
             if (dot(weight, weight) < EPS) { break; }
         }
