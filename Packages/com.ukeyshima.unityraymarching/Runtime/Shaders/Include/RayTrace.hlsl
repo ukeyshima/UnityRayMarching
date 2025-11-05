@@ -21,6 +21,14 @@
 #define RUSSIAN_ROULETTE 0.0
 #endif
 
+#ifndef ITER_MAX
+#define ITER_MAX 1
+#endif
+
+#ifndef BOUNCE_LIMIT
+#define BOUNCE_LIMIT 1
+#endif
+
 #ifndef INTERSECTION
 #define INTERSECTION(RO, RD, MAX_DISTANCE, HIT_POS, SURFACE) (RayMarching(RO, RD, MAX_DISTANCE, HIT_POS, SURFACE))
 #endif
@@ -86,20 +94,20 @@ void CalcBRDFAndPDF(float2 xi, float r, float3 n, float3 v, float3 c, inout floa
     CalcBRDFAndPDF(r, n, v, c, rd, brdf, pdf);
 }
 
-float3 PathTrace(float3 ro0, float3 rd0, float3 color, float maxDistance, int iterMax, int bounceLimit)
+float3 PathTrace(float3 ro0, float3 rd0, float3 color, float maxDistance)
 {
     float3 sum = OOO;
     Surface s;
     float3 hitPos;
     [loop]
-    for(int iter = 0; iter < iterMax; iter++)
+    for(int iter = 0; iter < ITER_MAX; iter++)
     {
         float3 ro = ro0;
         float3 rd = rd0;
         float3 acc = OOO;
         float3 weight = III;
         [loop]
-        for (int bounce = 0; bounce <= bounceLimit; bounce++)
+        for (int bounce = 0; bounce <= BOUNCE_LIMIT; bounce++)
         {
             float3 n;
             bool hit = INTERSECTION_WITH_NORMAL(ro, rd, maxDistance, hitPos, s, n);
@@ -112,11 +120,7 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, float maxDistance, int it
             float r = m.roughness;
             float3 c = m.baseColor;
             float3 v = -rd;
-            float4 rand = Pcg01(float4(hitPos, iter * bounceLimit + bounce + _ElapsedTime));
-
-            float rr_prob = RUSSIAN_ROULETTE;
-            if (rand.z < rr_prob){ break; }
-            weight /= (1.0 - rr_prob);
+            float4 rand = Pcg01(float4(hitPos, iter * BOUNCE_LIMIT + bounce + _ElapsedTime));
 
             ro = hitPos + n * EPS * 2.0;
             
@@ -151,12 +155,16 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, float maxDistance, int it
             
             acc += e * weight * w;
             weight *= brdf / pdf * max(dot(rd, n), 0.0);
+
+            float rr_prob = RUSSIAN_ROULETTE;
+            if (rand.z < rr_prob){ break; }
+            weight /= (1.0 - rr_prob);
             
             if (dot(weight, weight) < EPS) { break; }
         }
         sum += acc;
     }
-    return sum / iterMax;
+    return sum / ITER_MAX;
 }
 
 #endif

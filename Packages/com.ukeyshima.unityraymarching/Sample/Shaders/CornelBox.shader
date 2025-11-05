@@ -80,6 +80,8 @@ Shader "Hidden/CornelBox"
             #define MAP(P) Map(P)
             #define GET_MATERIAL(S, RP) (materials[s.objectId])
             #define STEP_COUNT (marchingStep)
+            #define ITER_MAX (iterMax)
+            #define BOUNCE_LIMIT (bounceLimit)
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayTrace.hlsl"
 
             #ifdef _RAYMARCHING_UNLIT
@@ -87,7 +89,7 @@ Shader "Hidden/CornelBox"
             #elif _RAYMARCHING_BASIC
                 #define SAMPLE_RADIANCE(RO, RD, COL) Diffuse(RO, RD, COL, maxDistance)
             #elif _RAYMARCHING_PATHTRACE
-                #define SAMPLE_RADIANCE(RO, RD, COL) PathTrace(RO, RD, COL, maxDistance, iterMax, bounceLimit)
+                #define SAMPLE_RADIANCE(RO, RD, COL) PathTrace(RO, RD, COL, maxDistance)
             #endif
 
             float4 frag (v2f i) : SV_Target
