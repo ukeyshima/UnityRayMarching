@@ -30,38 +30,43 @@
 #endif
 
 #ifndef INTERSECTION
-#define INTERSECTION(RO, RD, MAX_DISTANCE, HIT_POS, SURFACE) (RayMarching(RO, RD, MAX_DISTANCE, HIT_POS, SURFACE))
+#define INTERSECTION(RO, RD, HIT_POS, SURFACE) (RayMarching(RO, RD, HIT_POS, SURFACE))
 #endif
 
 #ifndef INTERSECTION_WITH_NORMAL
-#define INTERSECTION_WITH_NORMAL(RO, RD, MAX_DISTANCE, HIT_POS, SURFACE, NORMAL) (RayMarching(RO, RD, MAX_DISTANCE, HIT_POS, SURFACE, NORMAL))
+#define INTERSECTION_WITH_NORMAL(RO, RD, HIT_POS, SURFACE, NORMAL) (RayMarching(RO, RD, HIT_POS, SURFACE, NORMAL))
 #endif
 
 #define REFLECT_THRESHOLD 0.01
 #define LAMBERT_THRESHOLD 0.99
 
-float3 Unlit(float3 ro, float3 rd, float3 color, float maxDistance)
+float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal)
 {
     float3 hitPos;
     Surface s;
-    bool hit = INTERSECTION(ro, rd, maxDistance, hitPos, s);
+    float3 n;
+    bool hit = INTERSECTION_WITH_NORMAL(ro, rd, hitPos, s, n);
     if(hit)
     {
         Material m = GET_MATERIAL(s, hitPos);
+        pos = hitPos;
+        normal = n;
         return m.baseColor;
     }
     return color;
 }
 
-float3 Diffuse(float3 ro, float3 rd, float3 color, float maxDistance)
+float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal)
 {
     float3 hitPos;
     Surface s;
     float3 n;
-    bool hit = INTERSECTION_WITH_NORMAL(ro, rd, maxDistance, hitPos, s, n);
+    bool hit = INTERSECTION_WITH_NORMAL(ro, rd, hitPos, s, n);
     if(hit)
     {
         Material m = GET_MATERIAL(s, hitPos);
+        pos = hitPos;
+        normal = n;
         return dot(n, -rd) * m.baseColor;
     }
     return color;
@@ -94,11 +99,23 @@ void CalcBRDFAndPDF(float2 xi, float r, float3 n, float3 v, float3 c, inout floa
     CalcBRDFAndPDF(r, n, v, c, rd, brdf, pdf);
 }
 
-float3 PathTrace(float3 ro0, float3 rd0, float3 color, float maxDistance)
+float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float3 normal)
 {
     float3 sum = OOO;
     Surface s;
     float3 hitPos;
+    float3 n;
+    bool hit = INTERSECTION_WITH_NORMAL(ro0, rd0, hitPos, s, n);
+    if(hit)
+    {
+        ro0 = hitPos;
+        pos = hitPos;
+        normal = n;
+    }
+    else
+    {
+        return color;
+    }
     [loop]
     for(int iter = 0; iter < ITER_MAX; iter++)
     {
@@ -109,8 +126,7 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, float maxDistance)
         [loop]
         for (int bounce = 0; bounce <= BOUNCE_LIMIT; bounce++)
         {
-            float3 n;
-            bool hit = INTERSECTION_WITH_NORMAL(ro, rd, maxDistance, hitPos, s, n);
+            hit = INTERSECTION_WITH_NORMAL(ro, rd, hitPos, s, n);
             if(!hit) {
                 acc += color * weight;
                 break;
@@ -137,7 +153,7 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, float maxDistance)
                     float3 rd_light = normalize(sampleLight.position - ro);
                     float3 hit_lightPos;
                     Surface s_light;
-                    bool hit_light = INTERSECTION(ro, rd_light, maxDistance, hit_lightPos, s_light);
+                    bool hit_light = INTERSECTION(ro, rd_light, hit_lightPos, s_light);
                     if (hit_light && s_light.objectId == sampleLight.objectId)
                     {
                         Material m_light = GET_MATERIAL(s_light, hit_lightPos);

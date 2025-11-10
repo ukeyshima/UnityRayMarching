@@ -4,7 +4,7 @@ Shader "Hidden/Sessions2024"
     {
         marchingStep("Marching Step", Float) = 80
         maxDistance("Max Distance", Float) = 1000
-        dof("Depth of Field", Float) = 1.5
+        focalLength("Focal Length", Float) = 1.5
         stairsHeight ("Stairs Height", Float) = 10.5
         stairsWidth ("Stairs Width", Float) = 11
         stairsTilingSize ("Stairs Tiling Size", Float) = 150
@@ -55,7 +55,7 @@ Shader "Hidden/Sessions2024"
             int _FrameCount;
             float2 _Resolution;
 
-            float dof, marchingStep, maxDistance;
+            float focalLength, marchingStep, maxDistance;
             int bounceLimit, iterMax;
             float stairsHeight, stairsWidth, stairsTilingSize;
 
@@ -454,15 +454,16 @@ Shader "Hidden/Sessions2024"
             #define STEP_COUNT (marchingStep)
             #define ITER_MAX (iterMax)
             #define BOUNCE_LIMIT (bounceLimit)
+            #define MAX_DISTANCE (maxDistance)
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayTrace.hlsl"
 
 
             #ifdef _RAYMARCHING_UNLIT
-                #define SAMPLE_RADIANCE(RO, RD, COL) Unlit(RO, RD, COL, maxDistance)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL) Unlit(RO, RD, COL, POS, NORMAL)
             #elif _RAYMARCHING_BASIC
-                #define SAMPLE_RADIANCE(RO, RD, COL) Diffuse(RO, RD, COL, maxDistance)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL) Diffuse(RO, RD, COL, POS, NORMAL)
             #elif _RAYMARCHING_PATHTRACE
-                #define SAMPLE_RADIANCE(RO, RD, COL) PathTrace(RO, RD, COL, maxDistance)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL) PathTrace(RO, RD, COL, POS, NORMAL)
             #endif
 
             float4 frag (v2f i) : SV_Target
@@ -480,10 +481,11 @@ Shader "Hidden/Sessions2024"
                 cameraUp = normalize(cameraUp);
                 float3 cameraRight = CROSS(cameraUp, cameraDir);
                 cameraUp = CROSS(cameraDir, cameraRight);
-                float3 ray = normalize(cameraRight * p.x + cameraUp * p.y + cameraDir * dof);
+                float3 ray = normalize(cameraRight * p.x + cameraUp * p.y + cameraDir * focalLength);
                 float3 ro = cameraPos;
                 float3 rd = ray;
-                col.xyz = SAMPLE_RADIANCE(ro, rd, col.xyz);
+                float3 hitPos, normal;
+                col.xyz = SAMPLE_RADIANCE(ro, rd, col.xyz, hitPos, normal);
                 SaveBallParams(fragCoord, col);
                 return col;
             }

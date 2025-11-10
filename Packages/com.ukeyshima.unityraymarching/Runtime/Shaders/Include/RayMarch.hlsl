@@ -8,12 +8,16 @@
 #define MAP(P) {0, 0, FLOAT_MAX}
 #endif
 
-#ifndef LIMIT_MARCHING_DISTANCE
-#define LIMIT_MARCHING_DISTANCE(D, RD, RP) (D)
-#endif
-
 #ifndef STEP_COUNT
 #define STEP_COUNT 70
+#endif
+
+#ifndef MAX_DISTANCE
+#define MAX_DISTANCE 1000.0
+#endif
+
+#ifndef LIMIT_MARCHING_DISTANCE
+#define LIMIT_MARCHING_DISTANCE(D, RD, RP) (D)
 #endif
 
 float3 GetGrad(float3 p)
@@ -31,7 +35,7 @@ float3 GetNormal(float3 p)
     return normalize(GetGrad(p));
 }
 
-bool RayMarching(float3 ro, float3 rd, float maxDistance, out float3 rp, out Surface s)
+bool RayMarching(float3 ro, float3 rd, out float3 rp, out Surface s)
 {
     rp = ro;
     float rl = 0.0;
@@ -43,7 +47,7 @@ bool RayMarching(float3 ro, float3 rd, float maxDistance, out float3 rp, out Sur
         float d = s.distance;
         hit = abs(d) < EPS;
         if (hit){ break; }
-        if (rl > maxDistance){ break; }
+        if (rl > MAX_DISTANCE){ break; }
         d = LIMIT_MARCHING_DISTANCE(d, rd, rp);
         rl += d;
         rp = ro + rd * rl;
@@ -51,9 +55,9 @@ bool RayMarching(float3 ro, float3 rd, float maxDistance, out float3 rp, out Sur
     return hit;
 }
 
-bool RayMarching(float3 ro, float3 rd, float maxDistance, out float3 rp, out Surface s, out float3 normal)
+bool RayMarching(float3 ro, float3 rd, out float3 rp, out Surface s, out float3 normal)
 {
-    bool hit = RayMarching(ro, rd, maxDistance, rp, s);
+    bool hit = RayMarching(ro, rd, rp, s);
     if (hit) normal = GetNormal(rp);
     return hit;
 }
