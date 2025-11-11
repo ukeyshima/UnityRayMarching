@@ -9,10 +9,6 @@
 #define GET_MATERIAL(S, RP) {IOI, 0, OOO}
 #endif
 
-#ifndef NEXT_EVENT_ESTIMATION
-#define NEXT_EVENT_ESTIMATION false
-#endif
-
 #ifndef SAMPLE_LIGHT
 #define SAMPLE_LIGHT(X) {0, float3(0, 0, 0)}
 #endif
@@ -145,29 +141,31 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
             CalcBRDFAndPDF(rand.xy, r, n, v, c, rd, brdf, pdf);
             
             float w = 1.0;
-            if (NEXT_EVENT_ESTIMATION)
+#ifdef NEXT_EVENT_ESTIMATION
+            if (dot(e, e) < EPS && r > REFLECT_THRESHOLD)
             {
-                if (dot(e, e) < EPS && r > REFLECT_THRESHOLD)
+                SamplePos sampleLight = SAMPLE_LIGHT(rand.w);
+                float3 rd_light = normalize(sampleLight.position - ro);
+                float3 hit_lightPos;
+                Surface s_light;
+                bool hit_light = INTERSECTION(ro, rd_light, hit_lightPos, s_light);
+                if (hit_light && s_light.objectId == sampleLight.objectId)
                 {
-                    SamplePos sampleLight = SAMPLE_LIGHT(rand.w);
-                    float3 rd_light = normalize(sampleLight.position - ro);
-                    float3 hit_lightPos;
-                    Surface s_light;
-                    bool hit_light = INTERSECTION(ro, rd_light, hit_lightPos, s_light);
-                    if (hit_light && s_light.objectId == sampleLight.objectId)
-                    {
-                        Material m_light = GET_MATERIAL(s_light, hit_lightPos);
-                        float3 e_light = m_light.emission;
-                        float3 brdf_light;
-                        float pdf_light;
-                        CalcBRDFAndPDF(r, n, v, c, rd_light, brdf_light, pdf_light);
-                        float w_light = pdf_light / (pdf_light + pdf);
-                        w = pdf / (pdf + pdf_light);
-                        float weight_light = brdf_light / pdf_light * max(dot(rd_light, n), 0.0) * w_light * weight;
-                        acc += e_light * weight_light;
-                    }
-                }   
-            }
+                    Material m_light = GET_MATERIAL(s_light, hit_lightPos);
+                    float3 e_light = m_light.emission;
+                    float3 brdf_light;
+                    float pdf_light;
+                    CalcBRDFAndPDF(r, n, v, c, rd_light, brdf_light, pdf_light);
+                    float pdf_sq = pdf * pdf;
+                    float pdf_light_sq = pdf_light * pdf_light;
+                    float sum_sq = pdf_sq + pdf_light_sq;
+                    float w_light = pdf_light_sq / sum_sq;
+                    w = pdf_sq / sum_sq;
+                    float weight_light = brdf_light / pdf_light * max(dot(rd_light, n), 0.0) * w_light * weight;
+                    acc += e_light * weight_light;
+                }
+            }   
+#endif
             
             acc += e * weight * w;
             weight *= brdf / pdf * max(dot(rd, n), 0.0);
