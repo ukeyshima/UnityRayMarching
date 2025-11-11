@@ -32,7 +32,8 @@ float3 GetGrad(float3 p)
 
 float3 GetNormal(float3 p)
 {
-    return normalize(GetGrad(p));
+    float3 g = GetGrad(p);
+    return length(g) < FLOAT_MIN ? OOO : normalize(g);
 }
 
 bool RayMarching(float3 ro, float3 rd, out float3 rp, out Surface s)
