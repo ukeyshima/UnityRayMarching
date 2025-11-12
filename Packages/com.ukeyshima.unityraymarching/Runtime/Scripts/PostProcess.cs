@@ -8,7 +8,7 @@ namespace UnityRayMarching
     {
         [SerializeField] protected Material _material;
 
-        public virtual void Render(ShaderUniformData data, RenderTexture normalDepth, RenderTexture position, RenderTexture target)
+        public virtual void Render(ShaderUniformData data, RenderTexture target, RenderTexture normalDepth = null, RenderTexture position = null, RenderTexture id = null)
         {
             Graphics.Blit(data.RenderBuffer, target, _material);
         }

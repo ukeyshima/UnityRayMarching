@@ -9,6 +9,8 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: Sessions2024
   m_Shader: {fileID: 4800000, guid: b58631b532ae844b1a4a73861923576f, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _RAYMARCHING_PATHTRACE
   m_InvalidKeywords:
@@ -19,6 +21,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -100,12 +103,13 @@ Material:
     - attraction: 10
     - ballNum: 25
     - ballRadius: 5
-    - bounceLimit: 2
+    - bounceLimit: 1
     - deltaTime: 0.05
     - dof: 1.5
+    - focalLength: 1.5
     - friction: -20
     - gravity: 1
-    - iterMax: 2
+    - iterMax: 1
     - marchingStep: 70
     - maxDistance: 400
     - randomize: 1
@@ -116,9 +120,9 @@ Material:
     m_Colors:
     - _BoxCenter: {r: 0, g: 0, b: -122.5, a: 0}
     - _BoxSize: {r: 100, g: 100, b: 100, a: 0}
-    - _CameraDir: {r: 0, g: -0.34202018, b: 0.9396926, a: 0}
-    - _CameraPos: {r: 0, g: 1.7101007, b: -4.698463, a: 0}
-    - _CameraUp: {r: 0, g: 0.9396926, b: 0.34202018, a: 0}
+    - _CameraDir: {r: 0, g: 0, b: 1, a: 0}
+    - _CameraPos: {r: 0, g: 1, b: -150, a: 0}
+    - _CameraUp: {r: 0, g: 1, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _LightPos: {r: 0, g: 0, b: 0, a: 0}
@@ -127,3 +131,4 @@ Material:
     - ballVelMax: {r: 100, g: 100, b: 100, a: 0}
     - ballVelMin: {r: -100, g: -100, b: -100, a: 0}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

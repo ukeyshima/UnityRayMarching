@@ -50,6 +50,13 @@ Shader "Hidden/Sessions2024"
                 float4 vertex : SV_POSITION;
             };
 
+            struct MRTOutput
+            {
+                float4 color : SV_Target0;
+                float4 normalDepth : SV_Target1;
+                float4 position : SV_Target2;
+            };
+
             sampler2D _BackBuffer;
             float _ElapsedTime;
             int _FrameCount;
@@ -459,14 +466,14 @@ Shader "Hidden/Sessions2024"
 
 
             #ifdef _RAYMARCHING_UNLIT
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL) Unlit(RO, RD, COL, POS, NORMAL)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Unlit(RO, RD, COL, POS, NORMAL, SURFACE)
             #elif _RAYMARCHING_BASIC
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL) Diffuse(RO, RD, COL, POS, NORMAL)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Diffuse(RO, RD, COL, POS, NORMAL, SURFACE)
             #elif _RAYMARCHING_PATHTRACE
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL) PathTrace(RO, RD, COL, POS, NORMAL)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) PathTrace(RO, RD, COL, POS, NORMAL, SURFACE)
             #endif
 
-            float4 frag (v2f i) : SV_Target
+            MRTOutput frag (v2f i)
             {
                 float2 r = _Resolution;
                 int2 fragCoord = floor(i.uv * r);
@@ -485,9 +492,14 @@ Shader "Hidden/Sessions2024"
                 float3 ro = cameraPos;
                 float3 rd = ray;
                 float3 hitPos, normal;
-                col.xyz = SAMPLE_RADIANCE(ro, rd, col.xyz, hitPos, normal);
+                Surface surface;
+                col.xyz = SAMPLE_RADIANCE(ro, rd, col.xyz, hitPos, normal, surface);
                 SaveBallParams(fragCoord, col);
-                return col;
+                MRTOutput o;
+                o.color = float4(col.xyz, 1.0);
+                o.normalDepth = float4(normal, 0.0);
+                o.position = float4(hitPos, 0.0);
+                return o;
             }
 
             #pragma vertex vert

@@ -86,11 +86,11 @@ Shader "Hidden/CornelBox"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayTrace.hlsl"
 
             #ifdef _RAYMARCHING_UNLIT
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL) Unlit(RO, RD, COL, POS, NORMAL)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Unlit(RO, RD, COL, POS, NORMAL, SURFACE)
             #elif _RAYMARCHING_BASIC
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL) Diffuse(RO, RD, COL, POS, NORMAL)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Diffuse(RO, RD, COL, POS, NORMAL, SURFACE)
             #elif _RAYMARCHING_PATHTRACE
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL) PathTrace(RO, RD, COL, POS, NORMAL)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) PathTrace(RO, RD, COL, POS, NORMAL, SURFACE)
             #endif
 
             float4 frag (v2f i) : SV_Target
@@ -104,7 +104,8 @@ Shader "Hidden/CornelBox"
                 float3 rd = ray;
                 float3 col = float3(0.0, 0.0, 0.0);
                 float3 hitPos, normal;
-                col = SAMPLE_RADIANCE(ro, rd, col, hitPos, normal);
+                Surface surface;
+                col = SAMPLE_RADIANCE(ro, rd, col, hitPos, normal, surface);
                 col = saturate(col);
                 float4 backBuffer = tex2D(_BackBuffer, i.uv);
                 col = _FrameCount > 0 ? (backBuffer.rgb * (_FrameCount - 1) + col) / _FrameCount : col;

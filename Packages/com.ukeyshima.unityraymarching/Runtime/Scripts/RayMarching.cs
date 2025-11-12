@@ -32,14 +32,7 @@ namespace UnityRayMarching
         {
             RenderTexture source = RenderTexture.active;
 
-            if(_uniformDataDic.TryGetValue(Camera.current, out ShaderUniformData data))
-            {
-                _material.SetFloat("_FrameCount", data.FrameCount);
-                _material.SetFloat("_ElapsedTime", data.Time);
-                _material.SetVector("_Resolution", new Vector2(data.Resolution.x, data.Resolution.y));
-                _material.SetTexture("_BackBuffer", data.RenderBuffer);
-            }
-            else
+            if(!_uniformDataDic.TryGetValue(Camera.current, out ShaderUniformData data))
             {
                 data = new ShaderUniformData()
                 {
@@ -61,21 +54,36 @@ namespace UnityRayMarching
                 data.RenderBuffer = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.ARGBFloat);
             }
             
+            Render(data, source);
+        }
+
+        protected void Render(ShaderUniformData data, RenderTexture target)
+        {
             RenderTexture normalDepth = RenderTexture.GetTemporary(data.Resolution.x, data.Resolution.y, 0, RenderTextureFormat.ARGBFloat);
             RenderTexture position =  RenderTexture.GetTemporary(data.Resolution.x, data.Resolution.y, 0, RenderTextureFormat.ARGBFloat);
-            RenderBuffer[] colorBuffers = {data.RenderBuffer.colorBuffer, normalDepth.colorBuffer, position.colorBuffer};
-            MRTBlit(null, colorBuffers, normalDepth.depthBuffer, _material);
+            RenderTexture id =  RenderTexture.GetTemporary(data.Resolution.x, data.Resolution.y, 0, RenderTextureFormat.ARGBFloat);
+            RenderBuffer[] colorBuffers = {data.RenderBuffer.colorBuffer, normalDepth.colorBuffer, position.colorBuffer, id.colorBuffer};
+            
+            _material.SetFloat("_FrameCount", data.FrameCount);
+            _material.SetFloat("_ElapsedTime", data.Time);
+            _material.SetVector("_Resolution", new Vector2(data.Resolution.x, data.Resolution.y));
+            _material.SetTexture("_BackBuffer", data.RenderBuffer);
+            _material.SetVector("_CameraPos", Camera.current.transform.position);
+            _material.SetVector("_CameraDir", Camera.current.transform.forward);
+            _material.SetVector("_CameraUp", Camera.current.transform.up);
+            MRTBlit(null, colorBuffers, data.RenderBuffer.depthBuffer, _material);
             
             if(_postProcess == null)
             {
-                Graphics.Blit(data.RenderBuffer, source);
+                Graphics.Blit(data.RenderBuffer, target);
             }
             else
             {
-                _postProcess.Render(data, normalDepth, position, source);
+                _postProcess.Render(data, target, normalDepth, position, id);
             }
             RenderTexture.ReleaseTemporary(normalDepth);
             RenderTexture.ReleaseTemporary(position);
+            RenderTexture.ReleaseTemporary(id);
         }
 
         protected virtual void MRTBlit(RenderTexture source, RenderBuffer[] destColors, RenderBuffer destDepth, Material material)

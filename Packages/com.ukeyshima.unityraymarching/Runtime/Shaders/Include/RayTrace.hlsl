@@ -36,7 +36,7 @@
 #define REFLECT_THRESHOLD 0.01
 #define LAMBERT_THRESHOLD 0.99
 
-float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal)
+float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
 {
     float3 hitPos;
     Surface s;
@@ -47,12 +47,13 @@ float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 norm
         Material m = GET_MATERIAL(s, hitPos);
         pos = hitPos;
         normal = n;
+        surface = s;
         return m.baseColor;
     }
     return color;
 }
 
-float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal)
+float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
 {
     float3 hitPos;
     Surface s;
@@ -63,6 +64,7 @@ float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 no
         Material m = GET_MATERIAL(s, hitPos);
         pos = hitPos;
         normal = n;
+        surface = s;
         return dot(n, -rd) * m.baseColor;
     }
     return color;
@@ -95,7 +97,7 @@ void CalcBRDFAndPDF(float2 xi, float r, float3 n, float3 v, float3 c, inout floa
     CalcBRDFAndPDF(r, n, v, c, rd, brdf, pdf);
 }
 
-float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float3 normal)
+float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float3 normal, out Surface surface)
 {
     float3 sum = OOO;
     Surface s;
@@ -107,6 +109,7 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
         ro0 = hitPos;
         pos = hitPos;
         normal = n;
+        surface = s;
     }
     else
     {

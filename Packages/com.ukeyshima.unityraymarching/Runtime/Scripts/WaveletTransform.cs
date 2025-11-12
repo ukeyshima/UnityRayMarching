@@ -6,7 +6,7 @@ namespace UnityRayMarching
     {
         [SerializeField] private int _iterations;
         
-        public override void Render(ShaderUniformData data, RenderTexture normalDepth, RenderTexture position, RenderTexture target)
+        public override void Render(ShaderUniformData data, RenderTexture target, RenderTexture normalDepth = null, RenderTexture position = null, RenderTexture id = null)
         {
             RenderTexture temp1 = RenderTexture.GetTemporary(data.RenderBuffer.descriptor);
             RenderTexture temp2 = RenderTexture.GetTemporary(data.RenderBuffer.descriptor);
@@ -16,6 +16,7 @@ namespace UnityRayMarching
                 _material.SetInt("_Count", i);
                 _material.SetTexture("_NormalDepthTex", normalDepth);
                 _material.SetTexture("_PositionTex", position);
+                _material.SetTexture("_IDTex", id);
                 _material.mainTexture = temp1;
                 Graphics.Blit(temp1, temp2, _material);
                 (temp1, temp2) = (temp2, temp1);

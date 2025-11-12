@@ -3,6 +3,9 @@ Shader "Unlit/WaveletTransform"
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
+        _NormalDepthTex ("Normal Depth Texture", 2D) = "white" {}
+        _PositionTex ("Position Texture", 2D) = "white" {}
+        _IDTex ("ID Texture", 2D) = "white" {}
         _CS ("Color Sigma", float) = 0.0001
         _NS ("Normal Sigma", float) = 0.0025
         _PS ("Position Sigma", float) = 0.005
@@ -32,8 +35,8 @@ Shader "Unlit/WaveletTransform"
                 float4 vertex : SV_POSITION;
             };
 
-            Texture2D _MainTex, _NormalDepthTex, _PositionTex;
-            SamplerState _Linear_Mirror;
+            Texture2D _MainTex, _NormalDepthTex, _PositionTex, _IDTex;
+            SamplerState _Linear_Mirror, _Point_Mirror;
             float4 _MainTex_ST, _MainTex_TexelSize;
             int _Count;
             float _CS;
@@ -69,29 +72,32 @@ Shader "Unlit/WaveletTransform"
                 float4 sum = float4(0.0, 0.0, 0.0, 0.0);
                 float2 step = _MainTex_TexelSize.xy;
 
-                float4 c = _MainTex.Sample(_Linear_Mirror, i.uv);
-                float4 n = _NormalDepthTex.Sample(_Linear_Mirror, i.uv);
-                float4 p = _PositionTex.Sample(_Linear_Mirror, i.uv);
+                float4 c = _MainTex.Sample(_Point_Mirror, i.uv);
+                float4 n = _NormalDepthTex.Sample(_Point_Mirror, i.uv);
+                float4 p = _PositionTex.Sample(_Point_Mirror, i.uv);
+                int4 id = int4(_IDTex.Sample(_Point_Mirror, i.uv));
                 
                 float acc = 0.0;
                 int stepWidth = (1 << _Count);
-                int css = stepWidth * stepWidth;
 
                 for(int j = 0; j < 25; j++)
                 {
                     float2 uv = i.uv + offset[j] * step * stepWidth;
 
-                    float4 nc = _MainTex.Sample(_Linear_Mirror, uv);
+                    int4 nid = int4(_IDTex.Sample(_Point_Mirror, uv));
+                    if (any(id != nid)) continue;
+
+                    float4 nc = _MainTex.Sample(_Point_Mirror, uv);
                     float4 t = c - nc;
                     float dist2 = dot(t, t);
-                    float cw = _Count < 1 ? 1.0 : min(exp(-dist2 / (_CS * css)), 1.0);
+                    float cw = _Count < 1 ? 1.0 : min(exp(-dist2 / _CS), 1.0);
 
-                    float4 nn = _NormalDepthTex.Sample(_Linear_Mirror, uv);
+                    float4 nn = _NormalDepthTex.Sample(_Point_Mirror, uv);
                     t = n - nn;
                     dist2 = dot(t, t);
                     float nw = min(exp(-dist2 / _NS), 1.0);
 
-                    float4 np = _PositionTex.Sample(_Linear_Mirror, uv);
+                    float4 np = _PositionTex.Sample(_Point_Mirror, uv);
                     t = p - np;
                     dist2 = dot(t, t);
                     float pw = min(exp(-dist2 / _PS), 1.0);

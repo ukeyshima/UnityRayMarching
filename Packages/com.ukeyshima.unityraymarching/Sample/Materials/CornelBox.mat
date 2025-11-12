@@ -106,9 +106,9 @@ Material:
     - stepCoefficient: 0.5
     - stepCoefficient2: 0.5
     m_Colors:
-    - _CameraDir: {r: 0, g: -0.34202018, b: 0.9396926, a: 0}
-    - _CameraPos: {r: 0, g: 1.7101007, b: -4.698463, a: 0}
-    - _CameraUp: {r: 0, g: 0.9396926, b: 0.34202018, a: 0}
+    - _CameraDir: {r: -0.22154844, g: 0, b: 0.9751494, a: 0}
+    - _CameraPos: {r: 0, g: 1, b: -460.2, a: 0}
+    - _CameraUp: {r: 0, g: 1, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _LightPos: {r: 0, g: 0, b: 0, a: 0}
