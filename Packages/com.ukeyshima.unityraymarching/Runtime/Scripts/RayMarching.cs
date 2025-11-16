@@ -68,9 +68,12 @@ namespace UnityRayMarching
             _material.SetFloat("_ElapsedTime", data.Time);
             _material.SetVector("_Resolution", new Vector2(data.Resolution.x, data.Resolution.y));
             _material.SetTexture("_BackBuffer", data.RenderBuffer);
-            _material.SetVector("_CameraPos", Camera.current.transform.position);
-            _material.SetVector("_CameraDir", Camera.current.transform.forward);
-            _material.SetVector("_CameraUp", Camera.current.transform.up);
+            if (Camera.current != null)
+            {
+                _material.SetVector("_CameraPos", Camera.current.transform.position);
+                _material.SetVector("_CameraDir", Camera.current.transform.forward);
+                _material.SetVector("_CameraUp", Camera.current.transform.up);   
+            }
             MRTBlit(null, colorBuffers, data.RenderBuffer.depthBuffer, _material);
             
             if(_postProcess == null)
