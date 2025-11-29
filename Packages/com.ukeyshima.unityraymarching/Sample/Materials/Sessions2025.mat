@@ -103,14 +103,16 @@ Material:
     - attraction: 10
     - ballNum: 25
     - ballRadius: 5
-    - bounceLimit: 1
+    - bounceLimit: 2
     - deltaTime: 0.05
     - dof: 2
+    - eps: 0.002
     - focalLength: 1.5
     - friction: -20
+    - gamma: 0.45454547
     - gravity: 1
     - iterMax: 1
-    - marchingStep: 60
+    - marchingStep: 65
     - maxDistance: 100
     - randomize: 1
     - reflection: 10
