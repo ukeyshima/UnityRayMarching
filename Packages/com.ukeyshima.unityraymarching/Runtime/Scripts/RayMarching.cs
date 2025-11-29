@@ -36,7 +36,7 @@ namespace UnityRayMarching
             {
                 data = new ShaderUniformData()
                 {
-                    Time = Time.time,
+                    Time = Time.timeSinceLevelLoad,
                     FrameCount = 0,
                     Resolution = new Vector2Int(source.width, source.height),
                     RenderBuffer = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.ARGBFloat)
@@ -65,7 +65,7 @@ namespace UnityRayMarching
             RenderBuffer[] colorBuffers = {data.RenderBuffer.colorBuffer, normalDepth.colorBuffer, position.colorBuffer, id.colorBuffer};
             
             _material.SetFloat("_FrameCount", data.FrameCount);
-            _material.SetFloat("_ElapsedTime", data.Time);
+            _material.SetFloat("_ElapsedTime", Time.timeSinceLevelLoad);
             _material.SetVector("_Resolution", new Vector2(data.Resolution.x, data.Resolution.y));
             _material.SetTexture("_BackBuffer", data.RenderBuffer);
             if (Camera.current != null)
@@ -109,7 +109,6 @@ namespace UnityRayMarching
             GL.PopMatrix();
             Graphics.SetRenderTarget(null);
         }
-        }
 
         protected virtual void OnDestroy()
         {
@@ -124,7 +123,7 @@ namespace UnityRayMarching
         {
             foreach(var data in _uniformDataDic.Values)
             {
-                data.Time = Time.time;
+                data.Time = Time.timeSinceLevelLoad;
                 data.FrameCount = 0;
             }
             OnInit?.Invoke();

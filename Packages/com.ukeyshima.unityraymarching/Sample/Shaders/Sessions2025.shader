@@ -7,6 +7,8 @@ Shader "Hidden/Sessions2025"
         focalLength("Focal Length", Float) = 1.5
         bounceLimit ("Bounce Limit", Int) = 1
         iterMax ("Iteration Max", Int) = 1
+        gamma("Gamma", Float) = 2.2
+        eps("Epsilon", Float) = 0.001
         [KeywordEnum(Unlit, Basic, PathTrace)] _RayMarching ("Ray Marching", Float) = 0
     }
     SubShader
@@ -19,7 +21,7 @@ Shader "Hidden/Sessions2025"
 
             #pragma target 5.0
             
-            #define EPS 0.003
+            #define EPS eps
             #include "UnityCG.cginc"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Common.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/DistanceFunction.hlsl"
@@ -52,6 +54,7 @@ Shader "Hidden/Sessions2025"
 
             float focalLength, marchingStep, maxDistance;
             int bounceLimit, iterMax;
+            float eps, gamma;
 
             static float3 cameraPos, cameraDir, cameraUp;
             float3 _CameraPos, _CameraDir, _CameraUp;
@@ -444,14 +447,12 @@ Shader "Hidden/Sessions2025"
                           JOO * (roomSize - cubeSize * 0.5 - 1.0);
                 lightPos = cubePos;
                 wallRoughness = 1.0;
-                lightRadius = 0.001;
+                lightRadius = 0.02;
                 lightEmission = III;
                 cubeType = 4;
                 wallType = 0;
                 cameraUp = OIO;
                 hilbertStartTime = 14.5 * 8.0 / BPS;
-
-                // return;
                 
                  if (t < 2.0 * 8.0 / BPS)
                  {
@@ -464,6 +465,8 @@ Shader "Hidden/Sessions2025"
                                   OIO * cos(t * 0.2 - PI) * 0.5;
                      lightRadius = 0.1;
                      cubeType = 0;
+                     bounceLimit = 2;
+                     iterMax = 4;
                  }
                  else if (t < 4.0 * 8.0 / BPS)
                  {
@@ -473,6 +476,8 @@ Shader "Hidden/Sessions2025"
                                   OIO * cos(t * 0.15 - PI) * 0.3;
                      lightRadius = 0.1;
                      cubeType = 0;
+                     bounceLimit = 2;
+                     iterMax = 4;
                  }
                  else if (t < 6.5 * 8.0 / BPS)
                  {
@@ -482,18 +487,24 @@ Shader "Hidden/Sessions2025"
                                   OIO * cos(t * 0.15 - PI) * 0.3;
                      lightRadius = 0.1;
                      cubeType = 0;
+                     bounceLimit = 2;
+                     iterMax = 4;
                  }
                  else if (t < 8.5 * 8.0 / BPS)
                  {
                      cameraPos = float3(-6.31, -9.64, 7.49);
                      cameraDir = normalize(cubePos - OIJ - cameraPos);
                      cubeType = 1;
+                     bounceLimit = 2;
+                     iterMax = 2;
                  }
                  else if (t < 10.5 * 8.0 / BPS)
                  {
                      cameraPos = float3(-5.93, -7.4, 7.49);
                      cameraDir = normalize(cubePos - OJI - cameraPos);
                      cubeType = 1;
+                     bounceLimit = 2;
+                     iterMax = 2;
                  }
                  else if (t < 11.5 * 8.0 / BPS)
                  {
@@ -503,6 +514,8 @@ Shader "Hidden/Sessions2025"
                                   OIO * cos(t * 0.15) * 0.3;
                      cubeType = 2;
                      wallType = 1;
+                     bounceLimit = 1;
+                     iterMax = 7;
                  }
                  else if (t < 12.5 * 8.0 / BPS)
                  {
@@ -512,6 +525,8 @@ Shader "Hidden/Sessions2025"
                                   OIO * cos(t * 0.15) * 0.3;
                      cubeType = 2;
                      wallType = 1;
+                     bounceLimit = 1;
+                     iterMax = 7;
                  }
                  else if (t < 14.5 * 8.0 / BPS)
                  {
@@ -521,30 +536,40 @@ Shader "Hidden/Sessions2025"
                                   OIO * cos(t * 0.15 - PI) * 0.3;
                      cubeType = 2;
                      wallType = 1;
+                     bounceLimit = 1;
+                     iterMax = 7;
                  }
                  else if (t < 15.5 * 8.0 / BPS)
                  {
                      cameraPos = float3(-6.31, -9.4, 7.5);
                      cameraDir = normalize(cubePos - OIJ - cameraPos);
                      cubeType = 3;
+                     bounceLimit = 1;
+                     iterMax = 2;
                  }
                  else if (t < 16.5 * 8.0 / BPS)
                  {
                      cameraPos = float3(-8.93, -9.05, 6.0);
                      cameraDir = normalize(cubePos - OIJ - cameraPos);
                      cubeType = 3;
+                     bounceLimit = 1;
+                     iterMax = 2;
                  }
                  else if (t < 17.5 * 8.0 / BPS)
                  {
                      cameraPos = float3(-5.93, -7.4, 7.49);
                      cameraDir = normalize(cubePos - OJI - cameraPos);
                      cubeType = 3;
+                     bounceLimit = 1;
+                     iterMax = 2;
                  }
                  else if (t < 18.5 * 8.0 / BPS)
                  {
                      cameraPos = float3(-5.11, -8.1, 5.9);
                      cameraDir = normalize(cubePos - cameraPos);
                      cubeType = 3;
+                     bounceLimit = 1;
+                     iterMax = 2;
                  }
                  else if (t < 20.5 * 8.0 / BPS)
                  {
@@ -554,6 +579,8 @@ Shader "Hidden/Sessions2025"
                                   OIO * cos(t * 0.125) * 1.5;
                      cameraDir = normalize(cubePos - cameraPos);
                      cubeType = 4;
+                     bounceLimit = 2;
+                     iterMax = 2;
                  }
                  else if (t < 22.5 * 8.0 / BPS)
                  {
@@ -569,6 +596,8 @@ Shader "Hidden/Sessions2025"
                      lightRadius = 1.0;
                      lightEmission = IOO;
                      cubeType = 4;
+                     bounceLimit = 2;
+                     iterMax = 5;
                  }
                 else if(t < 24.5 * 8.0 / BPS)
                  {
@@ -579,6 +608,8 @@ Shader "Hidden/Sessions2025"
                     cameraDir = normalize(cubePos - cameraPos);
                     cubeType = 5;
                     lightRadius += 0.015 * Pcg01(_ElapsedTime);
+                    bounceLimit = 1;
+                    iterMax = 1;
                  }
                  else if (t < 26.5 * 8.0 / BPS)
                  {
@@ -589,6 +620,8 @@ Shader "Hidden/Sessions2025"
                      cameraDir = normalize(cubePos - cameraPos);
                      cubeType = 5;
                      lightRadius += 0.015 * Pcg01(_ElapsedTime);
+                     bounceLimit = 1;
+                     iterMax = 1;
                  }
                  else if(t < 27.5 * 8.0 / BPS)
                  {
@@ -599,6 +632,8 @@ Shader "Hidden/Sessions2025"
                      cubeType = 6;
                      lightRadius += 0.03 * Pcg01(_ElapsedTime);
                      lightPos.y += (-TIME2BEAT(time * 0.25) + 0.5);
+                     bounceLimit = 2;
+                     iterMax = 2;
                  }
                   else if (t < 28.5 * 8.0 / BPS)
                  {
@@ -607,8 +642,10 @@ Shader "Hidden/Sessions2025"
                      cameraDir += IOO * sin(t * 0.5) * 0.1 +
                                   OIO * cos(t * 0.15) * 0.3;
                      cubeType = 6;
-                      lightRadius += 0.03 * Pcg01(_ElapsedTime);
-                      lightPos.y += (-TIME2BEAT(time * 0.25) + 0.5);
+                     lightRadius += 0.03 * Pcg01(_ElapsedTime);
+                     lightPos.y += (-TIME2BEAT(time * 0.25) + 0.5);
+                     bounceLimit = 2;
+                     iterMax = 2;
                  }
                  else if(t < 29.5 * 8.0 / BPS)
                  {
@@ -619,6 +656,8 @@ Shader "Hidden/Sessions2025"
                      cubeType = 6;
                      lightRadius += 0.03 * Pcg01(_ElapsedTime);
                      lightPos.y += (-TIME2BEAT(time * 0.5) + 0.5);
+                     bounceLimit = 2;
+                     iterMax = 2;
                  }
                   else if (t < 30.5 * 8.0 / BPS)
                  {
@@ -629,6 +668,8 @@ Shader "Hidden/Sessions2025"
                       cubeType = 7;
                       lightRadius += 0.03 * Pcg01(_ElapsedTime);
                       lightPos.y += (-TIME2BEAT(time * 0.5) + 0.5);
+                      bounceLimit = 2;
+                      iterMax = 2;
                  }
                  else if(t < 31.5 * 8.0 / BPS)
                  {
@@ -638,8 +679,10 @@ Shader "Hidden/Sessions2025"
                                   OIO * cos(t * 0.15 - PI) * 0.3;
                      cubeType = 7;
                      lightEmission = IOO;
+                     bounceLimit = 2;
+                     iterMax = 2;
                  }
-                 else if(t < 32.5 * 8.0 / BPS)
+                 else if(t < 35 * 8.0 / BPS)
                  {
                     lightEmission = OOO;
                  }
@@ -649,8 +692,7 @@ Shader "Hidden/Sessions2025"
             
             MRTOutput frag (v2f i)
             {
-                time = MOD(_ElapsedTime, 1000.0);
-                // time = MOD(time, 4.0 * 8.0 / BPS) + 10.5 * 8.0 / BPS;
+                time = MOD(_ElapsedTime, 35 * 8.0 / BPS);
                 Scene();
                 float2 r = _Resolution;
                 int2 fragCoord = floor(i.uv * r);
@@ -666,6 +708,7 @@ Shader "Hidden/Sessions2025"
                 Surface surface;
                 col.xyz = SAMPLE_RADIANCE(ro, rd, col.xyz, hitPos, normal, surface);
                 col = saturate(col);
+                col = pow(col, gamma);
                 MRTOutput o;
                 o.color = float4(col.xyz, 1.0);
                 o.normalDepth = float4(normal, 0.0);
