@@ -78,7 +78,7 @@ Shader "Hidden/CornelBox"
             }
 
             #define MAP(P) Map(P)
-            #define GET_MATERIAL(S, RP) (materials[s.objectId])
+            #define GET_MATERIAL(S, RP) (materials[S.objectId])
             #define STEP_COUNT (marchingStep)
             #define ITER_MAX (iterMax)
             #define BOUNCE_LIMIT (bounceLimit)
