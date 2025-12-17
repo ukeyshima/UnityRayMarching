@@ -7,14 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Sessions2024
-  m_Shader: {fileID: 4800000, guid: b58631b532ae844b1a4a73861923576f, type: 3}
+  m_Name: WaveletTransform
+  m_Shader: {fileID: 4800000, guid: b2efa5b1efc54b5d823a0c47287c8630, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _RAYMARCHING_PATHTRACE
-  m_InvalidKeywords:
-  - _RAYMARCHING_RAYMARCHINGREFLECTION
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -45,11 +43,19 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _IDTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalDepthTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -61,74 +67,39 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _PositionTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - BounceLimit: 1
-    - IterMax: 1
-    - _BounceLimit: 2
     - _BumpScale: 1
-    - _ColorCoefficient: 0.1
-    - _ColorCoefficient2: 1
+    - _CPhi: 0.1
+    - _CS: 0.001
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
-    - _Dof: 1.5
     - _DstBlend: 0
-    - _EmissionGamma: -0.1
-    - _EmissionIntensity: 1
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _IterMax: 10
-    - _MarchingStep: 80
     - _Metallic: 0
     - _Mode: 0
+    - _NPhi: 0.1
+    - _NS: 0.0025
     - _OcclusionStrength: 1
+    - _PPhi: 0.1
+    - _PS: 0.005
     - _Parallax: 0.02
-    - _RayMarching: 2
-    - _Roughness: 0
-    - _SampleOnHit: 9976
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
-    - _StairsHash: 38
-    - _StairsHeight: 10.5
-    - _StairsTilingSize: 150
-    - _StairsWidth: 11
-    - _StepCoefficient: 1
-    - _StepCoefficient2: 1
-    - _TilingSize: 100
     - _UVSec: 0
-    - _Unlit: 0
     - _ZWrite: 1
-    - attraction: 10
-    - ballNum: 25
-    - ballRadius: 5
-    - bounceLimit: 1
-    - deltaTime: 0.05
-    - dof: 1.5
-    - focalLength: 1.5
-    - friction: -20
-    - gravity: 1
-    - iterMax: 1
-    - marchingStep: 70
-    - maxDistance: 400
-    - randomize: 1
-    - reflection: 10
-    - stairsHeight: 10.5
-    - stairsTilingSize: 150
-    - stairsWidth: 11
+    - c_phi: 0.003
+    - n_phi: 0.01
+    - p_phi: 0.01
     m_Colors:
-    - _BoxCenter: {r: 0, g: 0, b: -122.5, a: 0}
-    - _BoxSize: {r: 100, g: 100, b: 100, a: 0}
-    - _CameraDir: {r: 0, g: 0, b: 1, a: 0}
-    - _CameraPos: {r: 0, g: 1, b: -150, a: 0}
-    - _CameraUp: {r: 0, g: 1, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _LightPos: {r: 0, g: 0, b: 0, a: 0}
-    - ballPosMax: {r: 200, g: 150, b: 400, a: 0}
-    - ballPosMin: {r: -200, g: -150, b: 75, a: 0}
-    - ballVelMax: {r: 100, g: 100, b: 100, a: 0}
-    - ballVelMin: {r: -100, g: -100, b: -100, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

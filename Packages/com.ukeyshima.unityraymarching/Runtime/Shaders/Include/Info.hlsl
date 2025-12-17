@@ -1,16 +1,24 @@
 #ifndef INFO_INCLUDED
 #define INFO_INCLUDED
 
-struct Surface {
+struct Surface
+{
     int surfaceId;
     int objectId;
     float distance;
 };
 
-struct Material {
+struct Material
+{
     float3 baseColor;
     float roughness;
     float3 emission;
+};
+
+struct SamplePos
+{
+    int objectId;
+    float3 position;
 };
 
 Surface minSurface(Surface a, Surface b)

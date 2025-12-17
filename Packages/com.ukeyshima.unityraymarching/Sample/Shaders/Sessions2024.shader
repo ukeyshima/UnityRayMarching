@@ -4,7 +4,7 @@ Shader "Hidden/Sessions2024"
     {
         marchingStep("Marching Step", Float) = 80
         maxDistance("Max Distance", Float) = 1000
-        dof("Depth of Field", Float) = 1.5
+        focalLength("Focal Length", Float) = 1.5
         stairsHeight ("Stairs Height", Float) = 10.5
         stairsWidth ("Stairs Width", Float) = 11
         stairsTilingSize ("Stairs Tiling Size", Float) = 150
@@ -50,12 +50,19 @@ Shader "Hidden/Sessions2024"
                 float4 vertex : SV_POSITION;
             };
 
+            struct MRTOutput
+            {
+                float4 color : SV_Target0;
+                float4 normalDepth : SV_Target1;
+                float4 position : SV_Target2;
+            };
+
             sampler2D _BackBuffer;
             float _ElapsedTime;
             int _FrameCount;
             float2 _Resolution;
 
-            float dof, marchingStep, maxDistance;
+            float focalLength, marchingStep, maxDistance;
             int bounceLimit, iterMax;
             float stairsHeight, stairsWidth, stairsTilingSize;
 
@@ -84,6 +91,29 @@ Shader "Hidden/Sessions2024"
             static float phasePeriod[phaseNum + 1];
             static float phaseFrag[phaseNum];
             static float phaseTime = 0.0;
+
+            float sdStairs(float2 p)
+            {
+                float2 pf = float2(p.x + p.y, p.x + p.y) * 0.5;
+                float2 d = p - float2(floor(pf.x), ceil(pf.y));
+                float2 d2 = p - float2(floor(pf.x + 0.5), floor(pf.y + 0.5));
+                float d3 = length(float2(min(d.x, 0.0), max(d.y, 0.0)));
+                float d4 = length(float2(max(d2.x, 0.0), min(d2.y, 0.0)));
+                return d3 - d4;
+            }
+
+            float sdStairs(float2 p, float h)
+            {
+                p.xy = p.y < p.x ? p.yx : p.xy;
+                return sdStairs(p - float2(0.0, h));
+            }
+
+            float sdStairs(float3 p, float h, float w)
+            {
+                float x = abs(p.x) - w;
+                float d = sdStairs(p.zy, h);
+                return max(x, d);
+            }
 
             void CalcBeatTime()
             {
@@ -428,18 +458,22 @@ Shader "Hidden/Sessions2024"
             )
             #define MAP(P) Map(P)
             #define GET_MATERIAL(S, RP) GetMaterial(S, RP)
+            #define STEP_COUNT (marchingStep)
+            #define ITER_MAX (iterMax)
+            #define BOUNCE_LIMIT (bounceLimit)
+            #define MAX_DISTANCE (maxDistance)
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayTrace.hlsl"
 
 
             #ifdef _RAYMARCHING_UNLIT
-                #define SAMPLE_RADIANCE(RO, RD, COL) Unlit(RO, RD, COL, marchingStep, maxDistance)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Unlit(RO, RD, COL, POS, NORMAL, SURFACE)
             #elif _RAYMARCHING_BASIC
-                #define SAMPLE_RADIANCE(RO, RD, COL) Diffuse(RO, RD, COL, marchingStep, maxDistance)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Diffuse(RO, RD, COL, POS, NORMAL, SURFACE)
             #elif _RAYMARCHING_PATHTRACE
-                #define SAMPLE_RADIANCE(RO, RD, COL) PathTrace(RO, RD, COL, marchingStep, maxDistance, iterMax, bounceLimit, _FrameCount)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) PathTrace(RO, RD, COL, POS, NORMAL, SURFACE)
             #endif
 
-            float4 frag (v2f i) : SV_Target
+            MRTOutput frag (v2f i)
             {
                 float2 r = _Resolution;
                 int2 fragCoord = floor(i.uv * r);
@@ -454,12 +488,18 @@ Shader "Hidden/Sessions2024"
                 cameraUp = normalize(cameraUp);
                 float3 cameraRight = CROSS(cameraUp, cameraDir);
                 cameraUp = CROSS(cameraDir, cameraRight);
-                float3 ray = normalize(cameraRight * p.x + cameraUp * p.y + cameraDir * dof);
+                float3 ray = normalize(cameraRight * p.x + cameraUp * p.y + cameraDir * focalLength);
                 float3 ro = cameraPos;
                 float3 rd = ray;
-                col.xyz = SAMPLE_RADIANCE(ro, rd, col.xyz);
+                float3 hitPos, normal;
+                Surface surface;
+                col.xyz = SAMPLE_RADIANCE(ro, rd, col.xyz, hitPos, normal, surface);
                 SaveBallParams(fragCoord, col);
-                return col;
+                MRTOutput o;
+                o.color = float4(col.xyz, 1.0);
+                o.normalDepth = float4(normal, 0.0);
+                o.position = float4(hitPos, 0.0);
+                return o;
             }
 
             #pragma vertex vert

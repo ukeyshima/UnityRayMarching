@@ -4,7 +4,7 @@ Shader "Hidden/CornelBox"
     {
         marchingStep("Marching Step", Float) = 64
         maxDistance("Max Distance", Float) = 1000
-        dof("Depth of Field", Float) = 1
+        focalLength("Focal Length", Float) = 1
         bounceLimit ("Bounce Limit", Int) = 1
         iterMax ("Iteration Max", Int) = 1
         [KeywordEnum(Unlit, Basic, PathTrace)] _RayMarching ("Ray Marching", Float) = 0
@@ -44,7 +44,7 @@ Shader "Hidden/CornelBox"
 
             float3 _CameraPos, _CameraDir, _CameraUp;
 
-            float dof, marchingStep, maxDistance;
+            float focalLength, marchingStep, maxDistance;
             int bounceLimit, iterMax;
 
             static const Material materials[7] = {
@@ -78,15 +78,19 @@ Shader "Hidden/CornelBox"
             }
 
             #define MAP(P) Map(P)
-            #define GET_MATERIAL(S, RP) (materials[s.objectId])
+            #define GET_MATERIAL(S, RP) (materials[S.objectId])
+            #define STEP_COUNT (marchingStep)
+            #define ITER_MAX (iterMax)
+            #define BOUNCE_LIMIT (bounceLimit)
+            #define MAX_DISTANCE (maxDistance)
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayTrace.hlsl"
 
             #ifdef _RAYMARCHING_UNLIT
-                #define SAMPLE_RADIANCE(RO, RD, COL) Unlit(RO, RD, COL, marchingStep, maxDistance)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Unlit(RO, RD, COL, POS, NORMAL, SURFACE)
             #elif _RAYMARCHING_BASIC
-                #define SAMPLE_RADIANCE(RO, RD, COL) Diffuse(RO, RD, COL, marchingStep, maxDistance)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Diffuse(RO, RD, COL, POS, NORMAL, SURFACE)
             #elif _RAYMARCHING_PATHTRACE
-                #define SAMPLE_RADIANCE(RO, RD, COL) PathTrace(RO, RD, COL, marchingStep, maxDistance, iterMax, bounceLimit, _FrameCount)
+                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) PathTrace(RO, RD, COL, POS, NORMAL, SURFACE)
             #endif
 
             float4 frag (v2f i) : SV_Target
@@ -95,11 +99,13 @@ Shader "Hidden/CornelBox"
                 int2 fragCoord = floor(i.uv * r);
                 float3 p = float3((fragCoord * 2.0 - r) / min(r.x, r.y), 0.0);
                 float3 cameraRight = CROSS(_CameraUp, _CameraDir);
-                float3 ray = normalize(cameraRight * p.x + _CameraUp * p.y + _CameraDir * dof);
+                float3 ray = normalize(cameraRight * p.x + _CameraUp * p.y + _CameraDir * focalLength);
                 float3 ro = _CameraPos;
                 float3 rd = ray;
                 float3 col = float3(0.0, 0.0, 0.0);
-                col = SAMPLE_RADIANCE(ro, rd, col);
+                float3 hitPos, normal;
+                Surface surface;
+                col = SAMPLE_RADIANCE(ro, rd, col, hitPos, normal, surface);
                 col = saturate(col);
                 float4 backBuffer = tex2D(_BackBuffer, i.uv);
                 col = _FrameCount > 0 ? (backBuffer.rgb * (_FrameCount - 1) + col) / _FrameCount : col;

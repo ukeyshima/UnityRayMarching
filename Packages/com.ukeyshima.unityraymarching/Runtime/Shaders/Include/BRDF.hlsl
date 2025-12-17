@@ -26,8 +26,8 @@ float GeometrySmith(float NdotV, float NdotL, float roughness) {
     return ggx1 * ggx2;
 }
 
-float3 FresnelSchlick(float VdotH, float3 F0) {
-    // return F0 + (1.0 - F0) * pow(1.0 - VdotH, 5.0);
+float3 FresnelSchlick(float VdotH, float3 F0)
+{
     return F0 + (1.0 - F0) * exp2((-5.55473 * VdotH - 6.98316) * VdotH);
 }
 

@@ -7,6 +7,6 @@ namespace UnityRayMarching
         public float Time;
         public int FrameCount;
         public Vector2Int Resolution;
-        public RenderTexture BackBuffer;
+        public RenderTexture RenderBuffer;
     }
 }

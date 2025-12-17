@@ -4,5 +4,9 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Packages/com.ukeyshima.unityraymarching/Sample/Scenes/Sessions2025.unity
+    guid: 4cdbf22c39c574facb5874a9f09645de
   m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0

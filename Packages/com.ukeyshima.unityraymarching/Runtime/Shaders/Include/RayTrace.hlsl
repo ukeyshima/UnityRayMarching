@@ -3,134 +3,185 @@
 
 #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Common.hlsl"
 #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Info.hlsl"
-
-#ifndef MAP
-#define MAP(P) {0, 0, FLOAT_MAX}
-#endif
+#include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayMarch.hlsl"
 
 #ifndef GET_MATERIAL
 #define GET_MATERIAL(S, RP) {IOI, 0, OOO}
 #endif
 
-#ifndef LIMIT_MARCHING_DISTANCE
-#define LIMIT_MARCHING_DISTANCE(D, RD, RP) (D)
+#ifndef SAMPLE_LIGHT
+#define SAMPLE_LIGHT(X) {0, float3(0, 0, 0)}
 #endif
 
-bool RayMarching(float3 ro, float3 rd, int stepCount, float maxDistance, out float3 rp, out Surface s)
-{
-    rp = ro;
-    float rl = 0.0;
-    [loop]
-    for (int i = 0; i < stepCount; i++)
-    {
-        s = MAP(rp);
-        float d = s.distance;
-        if (abs(d) < EPS){ return true; }
-        if (rl > maxDistance){ break; }
-        d = LIMIT_MARCHING_DISTANCE(d, rd, rp);
-        rl += d;
-        rp = ro + rd * rl;
-    }
-    return false;
-}
+#ifndef RUSSIAN_ROULETTE
+#define RUSSIAN_ROULETTE 0.0
+#endif
 
-float3 GetGrad(float3 p)
-{
-    const float e = EPS;
-    const float2 k = float2(1, -1);
-    return k.xyy * MAP(p + k.xyy * e).distance +
-           k.yyx * MAP(p + k.yyx * e).distance +
-           k.yxy * MAP(p + k.yxy * e).distance +
-           k.xxx * MAP(p + k.xxx * e).distance;
-}
+#ifndef ITER_MAX
+#define ITER_MAX 1
+#endif
 
-float3 GetNormal(float3 p)
-{
-    return normalize(GetGrad(p));
-}
+#ifndef BOUNCE_LIMIT
+#define BOUNCE_LIMIT 1
+#endif
 
-float3 Unlit(float3 ro, float3 rd, float3 color, int stepCount, float maxDistance)
+#ifndef INTERSECTION
+#define INTERSECTION(RO, RD, HIT_POS, SURFACE) (RayMarching(RO, RD, HIT_POS, SURFACE))
+#endif
+
+#ifndef INTERSECTION_WITH_NORMAL
+#define INTERSECTION_WITH_NORMAL(RO, RD, HIT_POS, SURFACE, NORMAL) (RayMarching(RO, RD, HIT_POS, SURFACE, NORMAL))
+#endif
+
+#define REFLECT_THRESHOLD 0.01
+#define LAMBERT_THRESHOLD 0.99
+
+float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
 {
     float3 hitPos;
     Surface s;
-    bool hit = RayMarching(ro, rd, stepCount, maxDistance, hitPos, s);
+    float3 n;
+    bool hit = INTERSECTION_WITH_NORMAL(ro, rd, hitPos, s, n);
     if(hit)
     {
         Material m = GET_MATERIAL(s, hitPos);
+        pos = hitPos;
+        normal = n;
+        surface = s;
         return m.baseColor;
     }
     return color;
 }
 
-float3 Diffuse(float3 ro, float3 rd, float3 color, int stepCount, float maxDistance)
+float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
 {
     float3 hitPos;
     Surface s;
-    bool hit = RayMarching(ro, rd, stepCount, maxDistance, hitPos, s);
+    float3 n;
+    bool hit = INTERSECTION_WITH_NORMAL(ro, rd, hitPos, s, n);
     if(hit)
     {
         Material m = GET_MATERIAL(s, hitPos);
-        float3 n = GetNormal(hitPos);
+        pos = hitPos;
+        normal = n;
+        surface = s;
         return dot(n, -rd) * m.baseColor;
     }
     return color;
 }
 
-float3 PathTrace(float3 ro0, float3 rd0, float3 color, int stepCount, float maxDistance, int iterMax, int bounceLimit, int seed)
+void CalcBRDFAndPDF(float r, float3 n, float3 v, float3 c, float3 rd, out float3 brdf, out float pdf)
+{
+    if (r <= REFLECT_THRESHOLD)
+    {
+        brdf = FresnelSchlick(max(dot(rd, v), 0.0), c);
+        pdf = 1.0; 
+    }
+    else if(r > LAMBERT_THRESHOLD)
+    {
+        brdf = LambertBRDF(c);
+        pdf = LambertPDF(n, rd);
+    }
+    else
+    {
+        brdf = MicrofacetGGXBRDF(n, v, rd, c, r);
+        pdf = GGXPDF(n, v, rd, r);
+    }
+}
+
+void CalcBRDFAndPDF(float2 xi, float r, float3 n, float3 v, float3 c, inout float3 rd, out float3 brdf, out float pdf)
+{
+    if (r <= REFLECT_THRESHOLD) { rd = reflect(rd, n); }
+    else if(r > LAMBERT_THRESHOLD) { rd = SampleHemiSphere(xi, n); }
+    else { rd = ImportanceSampleGGX(xi, r, n, rd); }
+    CalcBRDFAndPDF(r, n, v, c, rd, brdf, pdf);
+}
+
+float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float3 normal, out Surface surface)
 {
     float3 sum = OOO;
     Surface s;
-    bool hit;
-    Material m;
-    float3 n;
-    float2 rand;
-    float3 v;
     float3 hitPos;
+    float3 n;
+    bool hit = INTERSECTION_WITH_NORMAL(ro0, rd0, hitPos, s, n);
+    if(hit)
+    {
+        ro0 = hitPos;
+        pos = hitPos;
+        normal = n;
+        surface = s;
+    }
+    else
+    {
+        return color;
+    }
     [loop]
-    for(int iter = 0; iter < iterMax; iter++)
+    for(int iter = 0; iter < ITER_MAX; iter++)
     {
         float3 ro = ro0;
         float3 rd = rd0;
         float3 acc = OOO;
         float3 weight = III;
         [loop]
-        for (int bounce = 0; bounce <= bounceLimit; bounce++)
+        for (int bounce = 0; bounce <= BOUNCE_LIMIT; bounce++)
         {
-            hit = RayMarching(ro, rd, marchingStep, maxDistance, hitPos, s);
+            hit = INTERSECTION_WITH_NORMAL(ro, rd, hitPos, s, n);
             if(!hit) {
                 acc += color * weight;
                 break;
             }
-            m = GET_MATERIAL(s, hitPos);
-            float d = s.distance;
+            Material m = GET_MATERIAL(s, hitPos);
             float3 e = m.emission;
             float r = m.roughness;
             float3 c = m.baseColor;
-            n = GetNormal(hitPos);
-            v = -rd;
-            rand = Pcg01(float4(hitPos, iter * bounceLimit + bounce + _ElapsedTime)).xy;
-            ro = hitPos + n * EPS * 2.0;
+            float3 v = -rd;
+            float4 rand = Pcg01(float4(hitPos, iter * BOUNCE_LIMIT + bounce + _ElapsedTime));
 
+            ro = hitPos + n * EPS * 2.0;
+            
             float3 brdf;
             float pdf;
-            if(r > 0.99) {
-                rd = ImportanceSampleLambert(rand, n);
-                brdf = LambertBRDF(c);
-                pdf = LambertPDF(n, rd);
-            }else{
-                rd = ImportanceSampleGGX(rand, r, n, rd);
-                if ( dot( rd, n ) < 0.0 ) { break; }
-                brdf = MicrofacetGGXBRDF(n, v, rd, c, r);
-                pdf = GGXPDF(n, v, rd, r);
-            }
-
-            acc += e * clamp(weight, 0.0, 1.0);
+            CalcBRDFAndPDF(rand.xy, r, n, v, c, rd, brdf, pdf);
+            
+            float w = 1.0;
+#ifdef NEXT_EVENT_ESTIMATION
+            if (dot(e, e) < EPS && r > REFLECT_THRESHOLD)
+            {
+                SamplePos sampleLight = SAMPLE_LIGHT(rand.w);
+                float3 rd_light = normalize(sampleLight.position - ro);
+                float3 hit_lightPos;
+                Surface s_light;
+                bool hit_light = INTERSECTION(ro, rd_light, hit_lightPos, s_light);
+                if (hit_light && s_light.objectId == sampleLight.objectId)
+                {
+                    Material m_light = GET_MATERIAL(s_light, hit_lightPos);
+                    float3 e_light = m_light.emission;
+                    float3 brdf_light;
+                    float pdf_light;
+                    CalcBRDFAndPDF(r, n, v, c, rd_light, brdf_light, pdf_light);
+                    float pdf_sq = pdf * pdf;
+                    float pdf_light_sq = pdf_light * pdf_light;
+                    float sum_sq = pdf_sq + pdf_light_sq;
+                    float w_light = pdf_light_sq / sum_sq;
+                    w = pdf_sq / sum_sq;
+                    float weight_light = brdf_light / pdf_light * max(dot(rd_light, n), 0.0) * w_light * weight;
+                    acc += e_light * weight_light;
+                }
+            }   
+#endif
+            
+            acc += e * weight * w;
             weight *= brdf / pdf * max(dot(rd, n), 0.0);
+
+            float rr_prob = RUSSIAN_ROULETTE;
+            if (rand.z < rr_prob){ break; }
+            weight /= (1.0 - rr_prob);
+            
             if (dot(weight, weight) < EPS) { break; }
         }
         sum += acc;
     }
-    return sum / float(iterMax);
+    return sum / ITER_MAX;
 }
 
 #endif
