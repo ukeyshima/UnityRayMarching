@@ -189,11 +189,10 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
 #endif
             
             acc += e * weight * w;
-            weight *= brdf / pdf * max(dot(rd, n), 0.0);
+            weight *= brdf / max(pdf, 1e-5) * max(dot(rd, n), 0.0);
 
-            float rr_prob = RUSSIAN_ROULETTE;
-            if (rand.z < rr_prob){ break; }
-            weight /= (1.0 - rr_prob);
+            if (rand.z < RUSSIAN_ROULETTE){ break; }
+            weight /= (1.0 - RUSSIAN_ROULETTE);
             
             if (dot(weight, weight) < EPS) { break; }
         }

@@ -6,7 +6,9 @@ float GGXPDF(float3 N, float3 V, float3 H, float roughness)
     float NdotH = max(dot(N, H), 0.0);
     float VdotH = max(dot(V, H), 0.0);
     float D = DistributionGGX(NdotH, roughness);
-    return D * NdotH / (4.0 * VdotH);
+    float3 nom = D * NdotH;
+    float denom = 4.0 * VdotH;
+    return nom / max(denom, 1e-5);
 }
 
 float LambertPDF(float3 N, float3 L)

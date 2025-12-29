@@ -101,7 +101,6 @@ Shader "Hidden/CornelBox"
                 float3 hitPos, normal;
                 Surface surface;
                 col = SAMPLE_RADIANCE(ro, rd, col, hitPos, normal, surface);
-                col = saturate(col);
                 float4 backBuffer = tex2D(_BackBuffer, i.uv);
                 col = _FrameCount > 0 ? (backBuffer.rgb * (_FrameCount - 1) + col) / _FrameCount : col;
                 return float4(col, 1.0);

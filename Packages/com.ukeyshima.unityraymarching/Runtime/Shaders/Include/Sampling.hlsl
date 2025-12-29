@@ -42,7 +42,7 @@ float3 ImportanceSampleGGX(float2 xi, float roughness, float3 n)
 {
     float a = roughness * roughness;
     float phi = 2.0 * PI * xi.x;
-    float cosTheta = sqrt((1.0 - xi.y) / (1.0 + (a * a - 1.0) * xi.y));
+    float cosTheta = SATURATE(sqrt((1.0 - xi.y) / (1.0 + (a * a - 1.0) * xi.y)));
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
     float3 h = float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
     float3 up = abs(n.z) < 0.999 ? float3(0, 0, 1) : float3(1, 0, 0);

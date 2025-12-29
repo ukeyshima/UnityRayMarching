@@ -10,7 +10,7 @@ float DistributionGGX(float NdotH, float roughness)
     float nom = a2;
     float denom = (NdotH * NdotH * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
-    return nom / denom;
+    return nom / max(denom, 1e-5);
 }
 
 float GeometrySchlickGGX(float NdotV, float roughness)
@@ -19,7 +19,7 @@ float GeometrySchlickGGX(float NdotV, float roughness)
     float k = (r * r) / 8.0;
     float nom = NdotV;
     float denom = NdotV * (1.0 - k) + k;
-    return nom / denom;
+    return nom / max(denom, 1e-5);
 }
 
 float GeometrySmith(float NdotV, float NdotL, float roughness)
@@ -43,9 +43,9 @@ float3 MicrofacetGGXBRDF(float3 N, float3 V, float3 L, float3 H, float3 F0, floa
     float3 F = FresnelSchlick(VdotH, F0);
 	float D = DistributionGGX(NdotH, roughness);
 	float G = GeometrySmith(NdotV, NdotL, roughness);
-    float3 nominator = D * G * F;
-	float denominator = 4.0 * NdotV * NdotL;
-	return nominator / denominator;
+    float3 nom = D * G * F;
+	float denom = 4.0 * NdotV * NdotL;
+	return nom / max(denom, 1e-5);
 }
 
 float3 LambertBRDF(float3 baseColor)
