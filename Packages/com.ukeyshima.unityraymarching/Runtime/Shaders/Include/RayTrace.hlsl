@@ -3,7 +3,11 @@
 
 #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Common.hlsl"
 #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Info.hlsl"
+#include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Pcg.hlsl"
 #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayMarch.hlsl"
+#include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Sampling.hlsl"
+#include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/BRDF.hlsl"
+#include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/PDF.hlsl"
 
 #ifndef GET_MATERIAL
 #define GET_MATERIAL(S, RP) {IOI, 0, OOO}
@@ -70,31 +74,32 @@ float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 no
     return color;
 }
 
-void CalcBRDFAndPDF(float r, float3 n, float3 v, float3 c, float3 rd, out float3 brdf, out float pdf)
+void CalcBRDFAndPDF(float2 xi, Material m, float3 n, bool withSample, in float3 v, inout float3 l, out float3 brdf, out float pdf)
 {
-    if (r <= REFLECT_THRESHOLD)
+    float r = m.roughness;
+    float me = m.metallic;
+    float3 c = m.baseColor;
+        
+    float specW = lerp(0.04, 1.0, me);
+    float diffW = (1.0 - specW);
+    if (withSample)
     {
-        brdf = FresnelSchlick(max(dot(rd, v), 0.0), c);
-        pdf = 1.0; 
+        float x = Pcg01(xi.x);
+        if (x < diffW)
+        {
+            l = ImportanceSampleCosine(xi, n);
+        }
+        else
+        {
+            l = reflect(-v, ImportanceSampleGGX(xi, r, n));
+        }   
     }
-    else if(r > LAMBERT_THRESHOLD)
-    {
-        brdf = LambertBRDF(c);
-        pdf = LambertPDF(n, rd);
-    }
-    else
-    {
-        brdf = MicrofacetGGXBRDF(n, v, rd, c, r);
-        pdf = GGXPDF(n, v, rd, r);
-    }
-}
 
-void CalcBRDFAndPDF(float2 xi, float r, float3 n, float3 v, float3 c, inout float3 rd, out float3 brdf, out float pdf)
-{
-    if (r <= REFLECT_THRESHOLD) { rd = reflect(rd, n); }
-    else if(r > LAMBERT_THRESHOLD) { rd = ImportanceSampleCosine(xi, n); }
-    else { rd = ImportanceSampleGGX(xi, r, n, rd); }
-    CalcBRDFAndPDF(r, n, v, c, rd, brdf, pdf);
+    float3 h = normalize(v + l);
+    float3 F0 = lerp(0.04 * III, c, me);
+    float3 F = FresnelSchlick(max(dot(v, h), 0.0), F0);
+    brdf = LambertBRDF(c) * (1.0 - me) * (1.0 - F) + MicrofacetGGXBRDF(n, v, l, h, F0, r);
+    pdf = LambertPDF(n, l) * diffW + GGXPDF(n, v, h, r) * specW;
 }
 
 float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float3 normal, out Surface surface)
@@ -133,15 +138,28 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
             Material m = GET_MATERIAL(s, hitPos);
             float3 e = m.emission;
             float r = m.roughness;
+            float me = m.metallic;
             float3 c = m.baseColor;
             float3 v = -rd;
-            float4 rand = Pcg01(float4(hitPos, iter * BOUNCE_LIMIT + bounce + _ElapsedTime));
 
             ro = hitPos + n * EPS * 2.0;
             
+            if (r <= REFLECT_THRESHOLD)
+            {
+                float3 l = reflect(-v, n);
+                float3 h = normalize(l + v);
+                float3 F0 = lerp(0.04 * III, c, me);
+                rd = l;
+                acc += e * weight;
+                weight *= FresnelSchlick(max(dot(v, h), 0.0), F0);
+                continue;
+            }
+            
+            float4 rand = Pcg01(float4(hitPos, (iter * BOUNCE_LIMIT + bounce) + _ElapsedTime));
+            
             float3 brdf;
             float pdf;
-            CalcBRDFAndPDF(rand.xy, r, n, v, c, rd, brdf, pdf);
+            CalcBRDFAndPDF(rand.xy, m, n, true, v, rd, brdf, pdf);
             
             float w = 1.0;
 #ifdef NEXT_EVENT_ESTIMATION
@@ -158,7 +176,7 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
                     float3 e_light = m_light.emission;
                     float3 brdf_light;
                     float pdf_light;
-                    CalcBRDFAndPDF(r, n, v, c, rd_light, brdf_light, pdf_light);
+                    CalcBRDFAndPDF(rand.xy, m, n, false, v, rd_light, brdf_light, pdf_light);
                     float pdf_sq = pdf * pdf;
                     float pdf_light_sq = pdf_light * pdf_light;
                     float sum_sq = pdf_sq + pdf_light_sq;

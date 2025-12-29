@@ -22,12 +22,7 @@ Shader "Hidden/CornelBox"
             #include "UnityCG.cginc"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Common.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/DistanceFunction.hlsl"
-            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Transform.hlsl"
-            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Pcg.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Info.hlsl"
-            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Sampling.hlsl"
-            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/BRDF.hlsl"
-            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/PDF.hlsl"
 
             #pragma multi_compile _RAYMARCHING_UNLIT _RAYMARCHING_BASIC _RAYMARCHING_PATHTRACE
 
@@ -48,13 +43,13 @@ Shader "Hidden/CornelBox"
             int bounceLimit, iterMax;
 
             static const Material materials[7] = {
-                {float3(0.0, 0.0, 0.0), 0.0, float3(0.0, 0.0, 0.0)},
-                {float3(1.0, 1.0, 1.0), 1.0, float3(0.0, 0.0, 0.0)},
-                {float3(0.0, 1.0, 0.0), 1.0, float3(0.0, 0.0, 0.0)},
-                {float3(1.0, 0.0, 0.0), 1.0, float3(0.0, 0.0, 0.0)},
-                {float3(1.0, 0.8, 0.6), 0.2, float3(10.0, 10.0, 10.0)},
-                {float3(1.0, 1.0, 1.0), 0.25, float3(0.0, 0.0, 0.0)},
-                {float3(1.0, 1.0, 1.0), 0.15, float3(0.0, 0.0, 0.0)}
+                {float3(0.0, 0.0, 0.0), 0.0, 1.0, float3(0.0, 0.0, 0.0)},
+                {float3(1.0, 1.0, 1.0), 1.0, 0.0, float3(0.0, 0.0, 0.0)},
+                {float3(0.0, 1.0, 0.0), 1.0, 0.0, float3(0.0, 0.0, 0.0)},
+                {float3(1.0, 0.0, 0.0), 1.0, 0.0, float3(0.0, 0.0, 0.0)},
+                {float3(1.0, 0.8, 0.6), 0.2, 1.0, float3(1.0, 1.0, 1.0)},
+                {float3(1.0, 1.0, 1.0), 0.25, 1.0, float3(0.0, 0.0, 0.0)},
+                {float3(1.0, 1.0, 1.0), 0.15, 1.0, float3(0.0, 0.0, 0.0)}
             };
 
             Surface Map(float3 p)

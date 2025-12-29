@@ -39,8 +39,6 @@ Shader "Hidden/Sessions2024"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Transform.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Pcg.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Info.hlsl"
-            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Sampling.hlsl"
-            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/BRDFOverPDF.hlsl"
 
             #pragma multi_compile _RAYMARCHING_UNLIT _RAYMARCHING_BASIC _RAYMARCHING_PATHTRACE
 
@@ -352,7 +350,7 @@ Shader "Hidden/Sessions2024"
 
             Material GetMaterial(Surface s, float3 p)
             {
-                Material m = {III, 0.0, OOO};
+                Material m = {III, 0.0, 1.0, OOO};
 
                 float3 defaultColor = lerp(
                     lerp(float3(0.7, 0.8, 1.0), float3(0.6, 0.05, 0.1), SATURATE(_ElapsedTime - phasePeriod[9] - 3.0)),
@@ -365,6 +363,7 @@ Shader "Hidden/Sessions2024"
 
                     m.baseColor = defaultColor;
                     m.roughness = lerp(0.01, 0.25, hash.x);
+                    m.metallic = 1.0;
                     m.emission = OOO;
                     return m;
                 }
@@ -385,6 +384,7 @@ Shader "Hidden/Sessions2024"
 
                     m.baseColor = OOO;
                     m.roughness = 1.0;
+                    m.metallic = 0.0;
                     m.emission = mask * color;
                     return m;
                 }
@@ -406,6 +406,7 @@ Shader "Hidden/Sessions2024"
 
                     m.baseColor = color;
                     m.roughness = 0.4;
+                    m.metallic = 1.0;
                     m.emission = lerp(float3(0.0, 0.0, 0.0), color, mask);
                     return m;
                 }
@@ -413,6 +414,7 @@ Shader "Hidden/Sessions2024"
                 {
                     m.baseColor = III;
                     m.roughness = 0.01;
+                    m.metallic = 1.0;
                     m.emission = OOO;
                     return m;
                 }
@@ -422,6 +424,7 @@ Shader "Hidden/Sessions2024"
                     float2 hash = Pcg01(seed);
                     m.baseColor = III;
                     m.roughness = lerp(0.02, 0.98, hash.x * hash.y);
+                    m.metallic = 1.0;
                     m.emission = OOO;
                     return m;
                 }
@@ -437,6 +440,7 @@ Shader "Hidden/Sessions2024"
 
                     m.baseColor = III;
                     m.roughness = lerp(0.03, 0.98, hash.x);
+                    m.metallic = 1.0;
                     m.emission = lerp(0.1, 0.5, mask) * defaultColor;
                     return m;
                 }
@@ -445,6 +449,7 @@ Shader "Hidden/Sessions2024"
                     float3 hash = Pcg01(int3(s.objectId, 0, 0));
                     m.baseColor = hash;
                     m.roughness = 0.03;
+                    m.metallic = 1.0;
                     m.emission = hash * 0.5;
                     return m;
                 }

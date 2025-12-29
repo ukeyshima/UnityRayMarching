@@ -29,7 +29,6 @@ Shader "Hidden/Sessions2025"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Pcg.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Info.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Sampling.hlsl"
-            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/BRDFOverPDF.hlsl"
 
             #pragma multi_compile _RAYMARCHING_UNLIT _RAYMARCHING_BASIC _RAYMARCHING_PATHTRACE
 
@@ -367,18 +366,20 @@ Shader "Hidden/Sessions2025"
             
             Material GetMaterial(Surface s, float3 p)
             {
-                Material m = {III, 0.0, OOO};
+                Material m = {III, 0.0, 1.0, OOO};
                 if(s.surfaceId == 0) //Cube
                 {
                     m.baseColor = III;
                     if (cubeType == 0)
                     {
                         m.roughness = 0.0;
-                        m.emission = s.objectId * III;    
+                        m.metallic = 1.0;
+                        m.emission = SATURATE(s.objectId) * III;    
                     }
                     else
                     {
-                        m.roughness = s.objectId * III;
+                        m.roughness = SATURATE(s.objectId) * III;
+                        m.metallic = 1.0 - SATURATE(s.objectId);
                         m.emission = OOO;
                     }
                     return m;
@@ -387,6 +388,7 @@ Shader "Hidden/Sessions2025"
                 {
                     m.baseColor = III;
                     m.roughness = wallRoughness;
+                    m.metallic = 1.0 - wallRoughness;
                     if (s.objectId == 0)
                     {
                         m.emission = OOO;
@@ -401,6 +403,7 @@ Shader "Hidden/Sessions2025"
                 {
                     m.baseColor = III;
                     m.roughness = 0.0;
+                    m.metallic = 1.0;
                     m.emission = lightEmission;
                     return m;
                 }

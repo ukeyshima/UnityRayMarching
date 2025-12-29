@@ -12,6 +12,7 @@ struct Material
 {
     float3 baseColor;
     float roughness;
+    float metallic;
     float3 emission;
 };
 
