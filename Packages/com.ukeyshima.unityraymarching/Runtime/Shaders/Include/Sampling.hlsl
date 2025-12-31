@@ -26,6 +26,15 @@ float3 SampleHemiSphere(float2 xi, float3 n)
 	return SampleSphereWeighted(xi, n, 0.0);
 }
 
+float3 SampleVisibleSphere(float2 xi, float3 r, float3 c, float3 p)
+{
+	float3 diff = c - p;
+	float3 dir = normalize(diff);
+	float sinThetaMax2 = (r * r) / dot(diff, diff);
+	float cosThetaMax = sqrt(max(0.0, 1.0 - sinThetaMax2));
+	return c + r * SampleSphereWeighted(xi, -dir, cosThetaMax);
+}
+
 float3 ImportanceSampleCosine(float2 xi, float3 n)
 {
 	float phi = 2.0 * PI * xi.x;

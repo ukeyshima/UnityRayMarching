@@ -23,6 +23,9 @@ Shader "Hidden/CornelBox"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Common.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/DistanceFunction.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Info.hlsl"
+            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Pcg.hlsl"
+            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Sampling.hlsl"
+            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/PDF.hlsl"
 
             #pragma multi_compile _RAYMARCHING_UNLIT _RAYMARCHING_BASIC _RAYMARCHING_PATHTRACE
 
@@ -52,6 +55,9 @@ Shader "Hidden/CornelBox"
                 {float3(1.0, 1.0, 1.0), 0.15, 1.0, float3(0.0, 0.0, 0.0)}
             };
 
+            static float3 lightPos = float3(0.0, 70.0, 0.0);
+            static float lightRadius = 15;
+
             Surface Map(float3 p)
             {
                 Surface ceil = {0, 1, sdBox(p - float3(0.0, 100.0, 0.0), float3(100.0, 1.0, 100.0))};
@@ -59,7 +65,7 @@ Shader "Hidden/CornelBox"
                 Surface backWall = {2, 1, sdBox(p - float3(0.0, 0.0, 99.0), float3(99.0, 99.0, 1.0))};
                 Surface rightWall = {3, 2, sdBox(p - float3(99, 0.0, 0.0), float3(1.0, 99.0, 99.0))};
                 Surface leftWall = {4, 3, sdBox(p + float3(99, 0.0, 0.0), float3(1.0, 99.0, 99.0))};
-                Surface light = {5, 4, sdBox(p - float3(0.0, 99.0, 0.0), float3(50.0, 1.0, 50.0))};
+                Surface light = {5, 4, sdSphere(p - lightPos, lightRadius)};
                 Surface box = {6, 5, sdBox(p - float3(-40.0, -40.0, 10.0), float3(30.0, 60.0, 30.0))};
                 Surface ball = {7, 6, sdSphere(p - float3(30.0, -70.0, -70.0), 30.0)};
                 Surface s = minSurface(ceil, floor);
@@ -71,9 +77,25 @@ Shader "Hidden/CornelBox"
                 s = minSurface(s, ball);
                 return s;
             }
+            
+            float3 SampleLight(float x, float3 p, out int id)
+            {
+                id = 5;
+                float2 xi = Pcg01(float2(x, x));
+                float3 samplePos = SampleVisibleSphere(xi, lightRadius, lightPos, p);
+                return normalize(samplePos - p);
+            }
+
+            float SampleLightPdf(float3 p, float3 l)
+            {
+                return VisibleSpherePDF(lightRadius, lightPos, p, l);
+            }
 
             #define MAP(P) Map(P)
             #define GET_MATERIAL(S, RP) (materials[S.objectId])
+            #define NEXT_EVENT_ESTIMATION
+            #define SAMPLE_LIGHT(X, P, ID) SampleLight(X, P, ID)
+            #define SAMPLE_LIGHT_PDF(P, L) SampleLightPdf(P, L)
             #define STEP_COUNT (marchingStep)
             #define ITER_MAX (iterMax)
             #define BOUNCE_LIMIT (bounceLimit)

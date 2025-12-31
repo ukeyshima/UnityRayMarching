@@ -16,12 +16,6 @@ struct Material
     float3 emission;
 };
 
-struct SamplePos
-{
-    int objectId;
-    float3 position;
-};
-
 Surface minSurface(Surface a, Surface b)
 {
     if (a.distance < b.distance)

@@ -1,6 +1,8 @@
 #ifndef PDF_INCLUDED
 #define PDF_INCLUDED
 
+#include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/BRDF.hlsl"
+
 float GGXPDF(float3 N, float3 V, float3 H, float roughness)
 {
     float NdotH = max(dot(N, H), 0.0);
@@ -19,6 +21,20 @@ float LambertPDF(float3 N, float3 L)
 float HemiSpherePDF()
 {
     return 0.5 / PI;
+}
+
+float VisibleSpherePDF(float3 r, float3 c, float3 p, float3 l)
+{
+    float3 diff = c - p;
+    float3 dir = normalize(diff);
+    float sinThetaMax2 = (r * r) / dot(diff, diff);
+    float cosThetaMax = sqrt(max(0.0, 1.0 - sinThetaMax2));
+    float cosTheta = dot(l, dir);
+    if (cosTheta > cosThetaMax)
+    {
+        return 1.0 / (2.0 * PI * (1.0 - cosThetaMax));    
+    }
+    return 0.0;
 }
 
 #endif

@@ -29,7 +29,8 @@ Shader "Hidden/Sessions2025"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Pcg.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Info.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Sampling.hlsl"
-
+            #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/PDF.hlsl"
+            
             #pragma multi_compile _RAYMARCHING_UNLIT _RAYMARCHING_BASIC _RAYMARCHING_PATHTRACE
 
             struct v2f
@@ -410,18 +411,24 @@ Shader "Hidden/Sessions2025"
                 return m;
             }
 
-            SamplePos sampleLightPos(float x)
+            float3 SampleLight(float x, float3 p, out int id)
             {
+                id = 2;
                 float2 xi = Pcg01(float2(x, x));
-                float3 p = lightPos + lightRadius * SampleSphere(xi);
-                SamplePos s = {0, p};
-                return s;
+                float3 samplePos = SampleVisibleSphere(xi, lightRadius, lightPos, p);
+                return normalize(samplePos - p);
+            }
+
+            float SampleLightPdf(float3 p, float3 l)
+            {
+                return VisibleSpherePDF(lightRadius, lightPos, p, l);
             }
             
             #define MAP(RP) Map(RP)
             #define GET_MATERIAL(S, RP) GetMaterial(S, RP)
             #define NEXT_EVENT_ESTIMATION
-            #define SAMPLE_LIGHT(X) sampleLightPos(X)
+            #define SAMPLE_LIGHT(X, P, ID) SampleLight(X, P, ID)
+            #define SAMPLE_LIGHT_PDF(P, L) SampleLightPdf(P, L)
             #define RUSSIAN_ROULETTE 0.0
             #define STEP_COUNT (marchingStep)
             #define ITER_MAX (iterMax)
@@ -690,6 +697,7 @@ Shader "Hidden/Sessions2025"
                     lightEmission = OOO;
                  }
                 
+                lightEmission *= 5000;
                 lightEmission *= SATURATE(1 - Pcg01(_FrameCount / 4) * exp(-5.0 * frac(t / 8.0 * BPS + (t < 6.5 * 8.0 / BPS ? 0.0 : 0.5)) / BPS * 8.0));
             }
             
