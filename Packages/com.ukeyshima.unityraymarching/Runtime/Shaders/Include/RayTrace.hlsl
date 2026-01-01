@@ -42,7 +42,6 @@
 #endif
 
 #define REFLECT_THRESHOLD 0.01
-#define LAMBERT_THRESHOLD 0.99
 
 float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
 {
@@ -80,30 +79,29 @@ float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 no
 
 void SampleBRDF(float2 xi, Material m, float3 n, bool withSample, in float3 v, inout float3 l, out float3 brdf, out float pdf)
 {
-    float r = m.roughness;
-    float me = m.metallic;
-    float3 c = m.baseColor;
+    float3 albedo = lerp(m.baseColor, OOO, m.metallic);
+    float3 F0 = lerp(0.04 * III, m.baseColor, m.metallic);
+    float3 F = FresnelSchlick(max(dot(v, n), 0.0), F0);
         
-    float specW = lerp(0.04, 1.0, me);
-    float diffW = (1.0 - specW);
+    float wSpec = MAX3(F);
+    float wDiff = (1.0 - wSpec);
     if (withSample)
     {
         float x = Pcg01(xi.x);
-        if (x < diffW)
+        if (x < wDiff)
         {
             l = ImportanceSampleCosine(xi, n);
         }
         else
         {
-            l = reflect(-v, ImportanceSampleGGX(xi, r, n));
+            l = reflect(-v, ImportanceSampleGGX(xi, m.roughness, n));
         }   
     }
 
     float3 h = normalize(v + l);
-    float3 F0 = lerp(0.04 * III, c, me);
-    float3 F = FresnelSchlick(max(dot(v, h), 0.0), F0);
-    brdf = LambertBRDF(c) * (1.0 - me) * (1.0 - F) + MicrofacetGGXBRDF(n, v, l, h, F0, r);
-    pdf = LambertPDF(n, l) * diffW + GGXPDF(n, v, h, r) * specW;
+    F = FresnelSchlick(max(dot(v, h), 0.0), F0);
+    brdf = LambertBRDF(albedo) * (1.0 - F) + MicrofacetGGXBRDF(n, v, l, h, F0, m.roughness);
+    pdf = LambertPDF(n, l) * wDiff + GGXPDF(n, v, h, m.roughness) * wSpec;
 }
 
 float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float3 normal, out Surface surface)
@@ -151,9 +149,10 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
                 float3 l = reflect(-v, n);
                 float3 h = normalize(l + v);
                 float3 F0 = lerp(0.04 * III, m.baseColor, m.metallic);
+                float3 F = FresnelSchlick(max(dot(v, h), 0.0), F0); 
                 rd = l;
                 acc += m.emission * weight;
-                weight *= FresnelSchlick(max(dot(v, h), 0.0), F0);
+                weight *= F;
                 wBRDF = 1.0;
                 continue;
             }
