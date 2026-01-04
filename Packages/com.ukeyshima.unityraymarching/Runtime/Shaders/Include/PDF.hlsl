@@ -15,12 +15,24 @@ float GGXPDF(float3 N, float3 V, float3 H, float roughness)
 
 float LambertPDF(float3 N, float3 L)
 {
-    return dot(N, L) / PI;
+    return max(dot(N, L), 0.0) / PI;
 }
 
 float HemiSpherePDF()
 {
     return 0.5 / PI;
+}
+
+float GGXPDF(float3 N, float3 V, float3 L, float3 H, float roughness, float EI, float EO)
+{
+    float NdotH = abs(dot(N, H));
+    float VdotH = abs(dot(V, H));
+    float LdotH = abs(dot(L, H));
+    float D = DistributionGGX(NdotH, roughness);
+    float nom = D * NdotH;
+    float sqrtDenom = EI * VdotH + EO * LdotH;
+    float jacobian = (EO * EO * LdotH) / (sqrtDenom * sqrtDenom);
+    return nom * jacobian;
 }
 
 float VisibleSpherePDF(float3 r, float3 c, float3 p, float3 l)

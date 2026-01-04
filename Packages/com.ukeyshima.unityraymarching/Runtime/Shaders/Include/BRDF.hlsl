@@ -36,6 +36,7 @@ float3 FresnelSchlick(float VdotH, float3 F0)
 
 float3 MicrofacetGGXBRDF(float3 N, float3 V, float3 L, float3 H, float3 F0, float roughness)
 {
+    if (dot(N, L) <= 0.0 || dot(N, V) <= 0.0) return float3(0, 0, 0);
     float NdotH = max(dot(N, H), 0.0);
     float NdotV = max(dot(N, V), 0.0);
     float NdotL = max(dot(N, L), 0.0);
@@ -48,8 +49,26 @@ float3 MicrofacetGGXBRDF(float3 N, float3 V, float3 L, float3 H, float3 F0, floa
 	return nom / max(denom, 1e-5);
 }
 
-float3 LambertBRDF(float3 baseColor)
+float3 MicrofacetGGXBTDF(float3 N, float3 V, float3 L, float3 H, float3 F0, float roughness, float EI, float EO)
 {
+    if (dot(N, L) * dot(N, V) > 0.0) return float3(0, 0, 0);
+    float NdotH = abs(dot(N, H));
+    float NdotV = abs(dot(N, V));
+    float NdotL = abs(dot(N, L));
+    float VdotH = abs(dot(V, H));
+    float LdotH = abs(dot(L, H));
+    float3 F = FresnelSchlick(VdotH, F0);
+    float D = DistributionGGX(NdotH, roughness);
+    float G = GeometrySmith(NdotV, NdotL, roughness);
+    float3 nom = VdotH * LdotH * EO * EO * D * G * (1 - F);
+    float sqrtDenom = EI * VdotH + EO * LdotH;
+    float denom = NdotV * NdotL * sqrtDenom * sqrtDenom;
+    return nom / max(denom, 1e-5);
+}
+
+float3 LambertBRDF(float3 N, float3 V, float3 L,float3 baseColor)
+{
+    if (dot(N, L) <= 0.0 || dot(N, V) <= 0.0) return float3(0, 0, 0);
     return baseColor / PI;
 }
 

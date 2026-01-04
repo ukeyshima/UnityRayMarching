@@ -45,8 +45,8 @@ bool RayMarching(float3 ro, float3 rd, out float3 rp, out Surface s)
     for (int i = 0; i < STEP_COUNT; i++)
     {
         s = MAP(rp);
-        float d = s.distance;
-        hit = abs(d) < EPS;
+        float d = abs(s.distance);
+        hit = d < EPS;
         if (hit){ break; }
         if (rl > MAX_DISTANCE){ break; }
         d = LIMIT_MARCHING_DISTANCE(d, rd, rp);

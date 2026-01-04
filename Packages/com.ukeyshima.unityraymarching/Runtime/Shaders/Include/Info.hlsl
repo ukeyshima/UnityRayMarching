@@ -11,9 +11,11 @@ struct Surface
 struct Material
 {
     float3 baseColor;
+    float3 emission;
     float roughness;
     float metallic;
-    float3 emission;
+    float refraction;
+    float transmission;
 };
 
 Surface minSurface(Surface a, Surface b)

@@ -64,22 +64,26 @@ Shader "Hidden/MaterialPreview"
 
             Material GetMaterial(Surface s, float3 p)
             {
-                Material m = {III, 0.0, 1.0, OOO};
+                Material m = {III, OOO, 0.0, 1.0, 0.0, 0.0};
 
                 if (s.surfaceId == 0)
                 {
                     m.baseColor = III;
+                    m.emission = III;
                     m.roughness = 1.0;
                     m.metallic = 0.0;
-                    m.emission = III;
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                 }
                 else if (s.surfaceId == 1)
                 {
                     int2 seed = floor(p.xz / 10.0);
                     m.baseColor = (seed.x + seed.y) % 2 == 0 ? III * 0.3 : III;
+                    m.emission = OOO;
                     m.roughness = 1.0;
                     m.metallic = 0.0;
-                    m.emission = OOO;
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                 }
                 else
                 {
@@ -90,9 +94,11 @@ Shader "Hidden/MaterialPreview"
                     float4 rand3 = Pcg01(rand2);
                     
                     m.baseColor = rand.xyz;
-                    m.emission = rand.w > 0.2 ? OOO : rand2.xyz;
-                    m.roughness = rand3.x;
-                    m.metallic = rand3.y;
+                    m.emission = step(0.8, rand.w) * rand2.xyz;
+                    m.metallic = step(0.5, rand3.x);
+                    m.transmission = step(m.metallic, 0.5) * step(0.4, rand3.z);
+                    m.roughness = m.transmission < 0.5 ? pow(rand2.w, 2.0) : pow(rand2.w, 3.0);
+                    m.refraction = lerp(1.1, 2.0, rand3.y);
                 }
                 return m;
             }

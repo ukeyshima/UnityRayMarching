@@ -41,7 +41,7 @@
 #define INTERSECTION_WITH_NORMAL(RO, RD, HIT_POS, SURFACE, NORMAL) (RayMarching(RO, RD, HIT_POS, SURFACE, NORMAL))
 #endif
 
-#define ROUGHNESS_MIN 0.005
+#define ROUGHNESS_MIN 0.05
 
 float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
 {
@@ -77,32 +77,56 @@ float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 no
     return color;
 }
 
-void SampleBRDF(float2 xi, Material m, float3 n, bool withSample, in float3 v, inout float3 l, out float3 brdf, out float pdf)
+void SampleBRDF(float2 xi, Material m, float3 n, bool withSample, in float3 v, inout float3 l, inout float3 ro, out float3 brdf, out float pdf, out float ndotl)
 {
+    bool entering = dot(v, n) > 0.0;
+    float3 normal = entering ? n : -n;
+    float etaI = entering ? 1.0 : m.refraction;
+    float etaO = entering ? m.refraction : 1.0;
     float r = max(m.roughness, ROUGHNESS_MIN);
     float3 albedo = lerp(m.baseColor, OOO, m.metallic);
     float3 F0 = lerp(0.04 * III, m.baseColor, m.metallic);
-    float3 F = FresnelSchlick(max(dot(v, n), 0.0), F0);
-        
-    float wSpec = MAX3(F);
-    float wDiff = (1.0 - wSpec);
+    float3 F = FresnelSchlick(dot(v, normal), F0);
+    
+    float wSpec = (F.x + F.y + F.z) / 3.0;
+    float wDiff = (1.0 - wSpec) * (1.0 - m.transmission);
+    float wTrans = (1.0 - wSpec) * m.transmission;
+
+    ndotl = max(dot(normal, l), 0.0);
+    
     if (withSample)
     {
-        float x = Pcg01(xi.x);
-        if (x < wDiff)
+        float2 x = Pcg01(xi);
+        if (x.x < wSpec)
         {
-            l = ImportanceSampleCosine(xi, n);
+            l = reflect(-v, ImportanceSampleGGX(xi, r, normal));
+            ndotl = max(dot(normal, l), 0.0);
+            ro = ro + normal * EPS * 2.0;
+        }
+        else if (x.x < wSpec + wDiff)
+        {
+            l = ImportanceSampleCosine(xi, normal);
+            ndotl = max(dot(normal, l), 0.0);
+            ro = ro + normal * EPS * 2.0;
         }
         else
         {
-            l = reflect(-v, ImportanceSampleGGX(xi, r, n));
-        }   
+            float3 h = ImportanceSampleGGX(xi, r, normal);
+            l = refract(-v, h, etaI / etaO);
+            ndotl = max(-dot(normal, l), 0.0);
+            ro = ro - normal * EPS * 2.0;
+        }
     }
-
+    
     float3 h = normalize(v + l);
-    F = FresnelSchlick(max(dot(v, h), 0.0), F0);
-    brdf = LambertBRDF(albedo) * (1.0 - F) + MicrofacetGGXBRDF(n, v, l, h, F0, r);
-    pdf = LambertPDF(n, l) * wDiff + GGXPDF(n, v, h, r) * wSpec;
+    float3 hTrans = -normalize(l * etaO + v * etaI);
+    F = FresnelSchlick((dot(v, h)), F0);
+    brdf = MicrofacetGGXBRDF(normal, v, l, h, F0, r) +
+           LambertBRDF(n, v, l, albedo) * (1.0 - F) * (1.0 - m.transmission) +
+           MicrofacetGGXBTDF(normal, v, l, hTrans, F0, r, etaI, etaO) * m.baseColor * m.transmission;
+    pdf = GGXPDF(normal, v, h, r) * wSpec +
+          LambertPDF(normal, l) * wDiff +
+          GGXPDF(normal, v, l, hTrans, r, etaI, etaO) * wTrans;
 }
 
 float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float3 normal, out Surface surface)
@@ -140,10 +164,7 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
                 break;
             }
             Material m = GET_MATERIAL(s, hitPos);
-            float3 v = -rd;
             acc += m.emission * weight * wBRDF;
-
-            ro = hitPos + n * EPS * 2.0;
             
             float4 rand = Pcg01(float4(hitPos, (iter * BOUNCE_LIMIT + bounce) + _ElapsedTime));
 #ifdef NEXT_EVENT_ESTIMATION
@@ -153,17 +174,17 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
                 float pdfLight = SAMPLE_LIGHT_PDF(hitPos, lLight);
                 float3 hitLightPos;
                 Surface sLight;
-                bool hitLight = INTERSECTION(ro, lLight, hitLightPos, sLight);
+                bool hitLight = INTERSECTION(hitPos + n * EPS * 2.0, lLight, hitLightPos, sLight);
                 if (hitLight && sLight.surfaceId == lightId)
                 {
                     Material mLight = GET_MATERIAL(sLight, hitLightPos);
 
                     float3 brdfLight;
                     float pdfBrdf;
-                    SampleBRDF(rand.xy, m, n, false, v, lLight, brdfLight, pdfBrdf);
+                    float ndotl;
+                    SampleBRDF(rand.xy, m, n, false, -rd, lLight, hitPos, brdfLight, pdfBrdf, ndotl);
             
                     float wNEE = pdfLight / max(pdfLight + pdfBrdf, 1e-5);
-                    float ndotl = max(dot(n, lLight), 0.0);
                     acc += mLight.emission * brdfLight / max(pdfLight, 1e-5) * ndotl * wNEE * weight;
                 }
             }
@@ -171,14 +192,15 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
 
             float3 brdf;
             float pdf;
-            SampleBRDF(rand.xy, m, n, true, v, rd, brdf, pdf);
-
+            float ndotl;
+            ro = hitPos;
+            SampleBRDF(rand.xy, m, n, true, -rd, rd, ro, brdf, pdf, ndotl);
+            
 #ifdef NEXT_EVENT_ESTIMATION
             float pdfLight = SAMPLE_LIGHT_PDF(hitPos, rd);
             wBRDF = pdf / max(pdf + pdfLight, 1e-5);
 #endif
             
-            float ndotl = max(dot(rd, n), 0.0);
             weight *= brdf / max(pdf, 1e-5) * ndotl;
 
             if (rand.z < RUSSIAN_ROULETTE){ break; }

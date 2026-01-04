@@ -367,45 +367,46 @@ Shader "Hidden/Sessions2025"
             
             Material GetMaterial(Surface s, float3 p)
             {
-                Material m = {III, 0.0, 1.0, OOO};
+                Material m = {III, OOO, 0.0, 1.0, 0.0, 0.0};
                 if(s.surfaceId == 0) //Cube
                 {
                     m.baseColor = III;
                     if (cubeType == 0)
                     {
+                        m.emission = SATURATE(s.objectId) * III;
                         m.roughness = 0.0;
                         m.metallic = 1.0;
-                        m.emission = SATURATE(s.objectId) * III;    
+                        m.refraction = 0.0;
+                        m.transmission = 0.0;
                     }
                     else
                     {
+                        m.emission = OOO;
                         m.roughness = SATURATE(s.objectId) * III;
                         m.metallic = 1.0 - SATURATE(s.objectId);
-                        m.emission = OOO;
+                        m.refraction = 0.0;
+                        m.transmission = 0.0;
                     }
                     return m;
                 }
                 else if (s.surfaceId == 1) //Wall
                 {
                     m.baseColor = III;
+                    m.emission = s.objectId == 0 ? OOO : III;
                     m.roughness = wallRoughness;
                     m.metallic = 1.0 - wallRoughness;
-                    if (s.objectId == 0)
-                    {
-                        m.emission = OOO;
-                    }
-                    else
-                    {
-                        m.emission = III;    
-                    }
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                     return m;
                 }
                 else if(s.surfaceId == 2) //LIGHT
                 {
                     m.baseColor = III;
+                    m.emission = lightEmission;
                     m.roughness = 0.0;
                     m.metallic = 1.0;
-                    m.emission = lightEmission;
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                     return m;
                 }
                 return m;

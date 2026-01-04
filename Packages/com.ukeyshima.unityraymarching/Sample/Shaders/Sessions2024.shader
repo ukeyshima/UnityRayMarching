@@ -350,7 +350,7 @@ Shader "Hidden/Sessions2024"
 
             Material GetMaterial(Surface s, float3 p)
             {
-                Material m = {III, 0.0, 1.0, OOO};
+                Material m = {III, OOO, 0.0, 1.0, 0.0, 0.0};
 
                 float3 defaultColor = lerp(
                     lerp(float3(0.7, 0.8, 1.0), float3(0.6, 0.05, 0.1), SATURATE(_ElapsedTime - phasePeriod[9] - 3.0)),
@@ -362,9 +362,11 @@ Shader "Hidden/Sessions2024"
                     float3 hash = Pcg01(seed);
 
                     m.baseColor = defaultColor;
+                    m.emission = OOO;
                     m.roughness = lerp(0.01, 0.25, hash.x);
                     m.metallic = 1.0;
-                    m.emission = OOO;
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                     return m;
                 }
                 else if(s.surfaceId == 1) //Monitor
@@ -383,9 +385,11 @@ Shader "Hidden/Sessions2024"
                     color = lerp(defaultColor, color, SATURATE(_ElapsedTime - phasePeriod[10] - 7.0));
 
                     m.baseColor = OOO;
+                    m.emission = mask * color;
                     m.roughness = 1.0;
                     m.metallic = 0.0;
-                    m.emission = mask * color;
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                     return m;
                 }
                 else if(s.surfaceId == 2) //Wall
@@ -405,17 +409,21 @@ Shader "Hidden/Sessions2024"
                     color = lerp(defaultColor, color, SATURATE(_ElapsedTime - phasePeriod[10] - 7.0));
 
                     m.baseColor = color;
+                    m.emission = lerp(float3(0.0, 0.0, 0.0), color, mask);
                     m.roughness = 0.4;
                     m.metallic = 1.0;
-                    m.emission = lerp(float3(0.0, 0.0, 0.0), color, mask);
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                     return m;
                 }
                 else if(s.surfaceId == 3) //door
                 {
                     m.baseColor = III;
+                    m.emission = OOO;
                     m.roughness = 0.01;
                     m.metallic = 1.0;
-                    m.emission = OOO;
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                     return m;
                 }
                 else if(s.surfaceId == 4) //door wall
@@ -423,9 +431,11 @@ Shader "Hidden/Sessions2024"
                     int2 seed = int2(p.x, p.y);
                     float2 hash = Pcg01(seed);
                     m.baseColor = III;
+                    m.emission = OOO;
                     m.roughness = lerp(0.02, 0.98, hash.x * hash.y);
                     m.metallic = 1.0;
-                    m.emission = OOO;
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                     return m;
                 }
                 else if(s.surfaceId == 5) //room
@@ -439,18 +449,22 @@ Shader "Hidden/Sessions2024"
                     float mask = step(sin(p.x * 0.1 + _ElapsedTime * 3.0 - p.y * 0.1), 0.0);
 
                     m.baseColor = III;
+                    m.emission = lerp(0.1, 0.5, mask) * defaultColor;
                     m.roughness = lerp(0.03, 0.98, hash.x);
                     m.metallic = 1.0;
-                    m.emission = lerp(0.1, 0.5, mask) * defaultColor;
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                     return m;
                 }
                 else if(s.surfaceId == 6) //ball
                 {
                     float3 hash = Pcg01(int3(s.objectId, 0, 0));
                     m.baseColor = hash;
+                    m.emission = hash * 0.5;
                     m.roughness = 0.03;
                     m.metallic = 1.0;
-                    m.emission = hash * 0.5;
+                    m.refraction = 0.0;
+                    m.transmission = 0.0;
                     return m;
                 }
 
