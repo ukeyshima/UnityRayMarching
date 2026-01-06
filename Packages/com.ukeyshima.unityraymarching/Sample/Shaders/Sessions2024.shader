@@ -350,7 +350,7 @@ Shader "Hidden/Sessions2024"
 
             Material GetMaterial(Surface s, float3 p)
             {
-                Material m = {III, OOO, 0.0, 1.0, 0.0, 0.0};
+                Material m = {III, OOO, 0.0, 1.0, 1.5, 0.0};
 
                 float3 defaultColor = lerp(
                     lerp(float3(0.7, 0.8, 1.0), float3(0.6, 0.05, 0.1), SATURATE(_ElapsedTime - phasePeriod[9] - 3.0)),
@@ -365,7 +365,7 @@ Shader "Hidden/Sessions2024"
                     m.emission = OOO;
                     m.roughness = lerp(0.01, 0.25, hash.x);
                     m.metallic = 1.0;
-                    m.refraction = 0.0;
+                    m.refraction = 1.5;
                     m.transmission = 0.0;
                     return m;
                 }
@@ -388,7 +388,7 @@ Shader "Hidden/Sessions2024"
                     m.emission = mask * color;
                     m.roughness = 1.0;
                     m.metallic = 0.0;
-                    m.refraction = 0.0;
+                    m.refraction = 1.5;
                     m.transmission = 0.0;
                     return m;
                 }
@@ -412,7 +412,7 @@ Shader "Hidden/Sessions2024"
                     m.emission = lerp(float3(0.0, 0.0, 0.0), color, mask);
                     m.roughness = 0.4;
                     m.metallic = 1.0;
-                    m.refraction = 0.0;
+                    m.refraction = 1.5;
                     m.transmission = 0.0;
                     return m;
                 }
@@ -422,7 +422,7 @@ Shader "Hidden/Sessions2024"
                     m.emission = OOO;
                     m.roughness = 0.01;
                     m.metallic = 1.0;
-                    m.refraction = 0.0;
+                    m.refraction = 1.5;
                     m.transmission = 0.0;
                     return m;
                 }
@@ -434,7 +434,7 @@ Shader "Hidden/Sessions2024"
                     m.emission = OOO;
                     m.roughness = lerp(0.02, 0.98, hash.x * hash.y);
                     m.metallic = 1.0;
-                    m.refraction = 0.0;
+                    m.refraction = 1.5;
                     m.transmission = 0.0;
                     return m;
                 }
@@ -452,7 +452,7 @@ Shader "Hidden/Sessions2024"
                     m.emission = lerp(0.1, 0.5, mask) * defaultColor;
                     m.roughness = lerp(0.03, 0.98, hash.x);
                     m.metallic = 1.0;
-                    m.refraction = 0.0;
+                    m.refraction = 1.5;
                     m.transmission = 0.0;
                     return m;
                 }
@@ -463,7 +463,7 @@ Shader "Hidden/Sessions2024"
                     m.emission = hash * 0.5;
                     m.roughness = 0.03;
                     m.metallic = 1.0;
-                    m.refraction = 0.0;
+                    m.refraction = 1.5;
                     m.transmission = 0.0;
                     return m;
                 }

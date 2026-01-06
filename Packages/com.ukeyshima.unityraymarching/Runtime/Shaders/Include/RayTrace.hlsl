@@ -81,11 +81,12 @@ void SampleBRDF(float2 xi, Material m, float3 n, bool withSample, in float3 v, i
 {
     bool entering = dot(v, n) > 0.0;
     float3 normal = entering ? n : -n;
-    float etaI = entering ? 1.0 : m.refraction;
-    float etaO = entering ? m.refraction : 1.0;
+    float ior = max(m.refraction, 1.0);
+    float etaI = entering ? 1.0 : ior;
+    float etaO = entering ? ior : 1.0;
     float r = max(m.roughness, ROUGHNESS_MIN);
+    float3 F0 = lerp(pow((ior - 1.0) / (ior + 1.0), 2.0) * III, m.baseColor, m.metallic);
     float3 albedo = lerp(m.baseColor, OOO, m.metallic);
-    float3 F0 = lerp(0.04 * III, m.baseColor, m.metallic);
     float3 F = FresnelSchlick(dot(v, normal), F0);
     
     float wSpec = (F.x + F.y + F.z) / 3.0;

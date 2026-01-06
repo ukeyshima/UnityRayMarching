@@ -367,7 +367,7 @@ Shader "Hidden/Sessions2025"
             
             Material GetMaterial(Surface s, float3 p)
             {
-                Material m = {III, OOO, 0.0, 1.0, 0.0, 0.0};
+                Material m = {III, OOO, 0.0, 1.0, 1.5, 0.0};
                 if(s.surfaceId == 0) //Cube
                 {
                     m.baseColor = III;
@@ -376,7 +376,7 @@ Shader "Hidden/Sessions2025"
                         m.emission = SATURATE(s.objectId) * III;
                         m.roughness = 0.0;
                         m.metallic = 1.0;
-                        m.refraction = 0.0;
+                        m.refraction = 1.5;
                         m.transmission = 0.0;
                     }
                     else
@@ -384,7 +384,7 @@ Shader "Hidden/Sessions2025"
                         m.emission = OOO;
                         m.roughness = SATURATE(s.objectId) * III;
                         m.metallic = 1.0 - SATURATE(s.objectId);
-                        m.refraction = 0.0;
+                        m.refraction = 1.5;
                         m.transmission = 0.0;
                     }
                     return m;
@@ -395,7 +395,7 @@ Shader "Hidden/Sessions2025"
                     m.emission = s.objectId == 0 ? OOO : III;
                     m.roughness = wallRoughness;
                     m.metallic = 1.0 - wallRoughness;
-                    m.refraction = 0.0;
+                    m.refraction = 1.5;
                     m.transmission = 0.0;
                     return m;
                 }
@@ -405,7 +405,7 @@ Shader "Hidden/Sessions2025"
                     m.emission = lightEmission;
                     m.roughness = 0.0;
                     m.metallic = 1.0;
-                    m.refraction = 0.0;
+                    m.refraction = 1.5;
                     m.transmission = 0.0;
                     return m;
                 }
