@@ -41,7 +41,7 @@
 #define INTERSECTION_WITH_NORMAL(RO, RD, HIT_POS, SURFACE, NORMAL) (RayMarching(RO, RD, HIT_POS, SURFACE, NORMAL))
 #endif
 
-#define ROUGHNESS_MIN 0.05
+#define ROUGHNESS_MIN 1e-4
 
 float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
 {
@@ -184,7 +184,7 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
                     float pdfBrdf;
                     float ndotl;
                     SampleBRDF(rand.xy, m, n, false, -rd, lLight, hitPos, brdfLight, pdfBrdf, ndotl);
-                    acc += mLight.emission * brdfLight / max(pdfLight + pdfBrdf, 1e-5) * ndotl * weight;
+                    acc += mLight.emission * brdfLight / max(pdfLight + pdfBrdf, 1e-20) * ndotl * weight;
                 }
             }
 #endif
@@ -197,10 +197,10 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
             
 #ifdef NEXT_EVENT_ESTIMATION
             float pdfLight = SAMPLE_LIGHT_PDF(hitPos, rd);
-            wBRDF = pdf / max(pdf + pdfLight, 1e-5);
+            wBRDF = pdf / max(pdf + pdfLight, 1e-20);
 #endif
             
-            weight *= brdf / max(pdf, 1e-5) * ndotl;
+            weight *= brdf / max(pdf, 1e-20) * ndotl;
 
             if (rand.z < RUSSIAN_ROULETTE){ break; }
             weight /= (1.0 - RUSSIAN_ROULETTE);

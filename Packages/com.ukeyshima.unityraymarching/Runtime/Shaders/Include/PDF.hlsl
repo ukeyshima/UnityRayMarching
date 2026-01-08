@@ -10,7 +10,7 @@ float GGXPDF(float3 N, float3 V, float3 H, float roughness)
     float D = DistributionGGX(NdotH, roughness);
     float3 nom = D * NdotH;
     float denom = 4.0 * VdotH;
-    return nom / max(denom, 1e-5);
+    return nom / max(denom, 1e-20);
 }
 
 float LambertPDF(float3 N, float3 L)
@@ -38,14 +38,14 @@ float GGXPDF(float3 N, float3 V, float3 L, float3 H, float roughness, float EI, 
 float VisibleSpherePDF(float3 r, float3 c, float3 p, float3 l)
 {
     float3 diff = c - p;
-    if (dot(diff, diff) < 1e-5) return 0.0;
+    if (dot(diff, diff) < 1e-20) return 0.0;
     float3 dir = normalize(diff);
-    float sinThetaMax2 = SATURATE(r * r / max(dot(diff, diff), 1e-5));
+    float sinThetaMax2 = SATURATE(r * r / max(dot(diff, diff), 1e-20));
     float cosThetaMax = sqrt(1.0 - sinThetaMax2);
     float cosTheta = dot(l, dir);
     if (cosTheta > cosThetaMax)
     {
-        return 1.0 / max(2.0 * PI * (1.0 - cosThetaMax), 1e-5);
+        return 1.0 / max(2.0 * PI * (1.0 - cosThetaMax), 1e-20);
     }
     return 0.0;
 }
