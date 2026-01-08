@@ -8,6 +8,7 @@ Shader "Hidden/MaterialPreview"
         bounceLimit ("Bounce Limit", Int) = 1
         iterMax ("Iteration Max", Int) = 1
         [KeywordEnum(Unlit, Basic, PathTrace)] _RayMarching ("Ray Marching", Float) = 0
+        [KeywordEnum(BRDF, NEE)] _SAMPLING ("Sampling", Float) = 0
     }
     SubShader
     {
@@ -28,7 +29,8 @@ Shader "Hidden/MaterialPreview"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/PDF.hlsl"
 
             #pragma multi_compile _RAYMARCHING_UNLIT _RAYMARCHING_BASIC _RAYMARCHING_PATHTRACE
-
+            #pragma multi_compile _SAMPLING_BRDF _SAMPLING_NEE
+            
             struct v2f
             {
                 float2 uv : TEXCOORD0;
@@ -118,9 +120,11 @@ Shader "Hidden/MaterialPreview"
 
             #define MAP(P) Map(P)
             #define GET_MATERIAL(S, RP) GetMaterial(S, RP)
+#ifdef _SAMPLING_NEE
             #define NEXT_EVENT_ESTIMATION
             #define SAMPLE_LIGHT(X, P, ID) SampleLight(X, P, ID)
             #define SAMPLE_LIGHT_PDF(P, L) SampleLightPdf(P, L)
+#endif
             #define STEP_COUNT (marchingStep)
             #define ITER_MAX (iterMax)
             #define BOUNCE_LIMIT (bounceLimit)
