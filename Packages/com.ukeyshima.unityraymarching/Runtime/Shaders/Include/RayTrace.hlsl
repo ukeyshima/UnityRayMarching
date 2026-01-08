@@ -171,22 +171,20 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
 #ifdef NEXT_EVENT_ESTIMATION
             {
                 int lightId;
+                float3 lro = hitPos + n * EPS * 2.0;
                 float3 lLight = SAMPLE_LIGHT(rand.w, hitPos, lightId);
                 float pdfLight = SAMPLE_LIGHT_PDF(hitPos, lLight);
                 float3 hitLightPos;
                 Surface sLight;
-                bool hitLight = INTERSECTION(hitPos + n * EPS * 2.0, lLight, hitLightPos, sLight);
+                bool hitLight = INTERSECTION(lro, lLight, hitLightPos, sLight);
                 if (hitLight && sLight.surfaceId == lightId)
                 {
                     Material mLight = GET_MATERIAL(sLight, hitLightPos);
-
                     float3 brdfLight;
                     float pdfBrdf;
                     float ndotl;
                     SampleBRDF(rand.xy, m, n, false, -rd, lLight, hitPos, brdfLight, pdfBrdf, ndotl);
-            
-                    float wNEE = pdfLight / max(pdfLight + pdfBrdf, 1e-5);
-                    acc += mLight.emission * brdfLight / max(pdfLight, 1e-5) * ndotl * wNEE * weight;
+                    acc += mLight.emission * brdfLight / max(pdfLight + pdfBrdf, 1e-5) * ndotl * weight;
                 }
             }
 #endif
