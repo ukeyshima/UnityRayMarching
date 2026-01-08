@@ -42,11 +42,16 @@ float3 MicrofacetGGXBRDF(float3 N, float3 V, float3 L, float3 H, float3 F0, floa
     float NdotL = max(dot(N, L), 0.0);
     float VdotH = max(dot(V, H), 0.0);
     float3 F = FresnelSchlick(VdotH, F0);
-	float D = DistributionGGX(NdotH, roughness);
-	float G = GeometrySmith(NdotV, NdotL, roughness);
-    float3 nom = D * G * F;
-	float denom = 4.0 * NdotV * NdotL;
-	return nom / max(denom, 1e-5);
+    float D = DistributionGGX(NdotH, roughness);
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    float3 nom = 0.25 * D * F;
+    float denom = (NdotV * (1.0 - k) + k) * (NdotL * (1.0 - k) + k);
+    return nom / max(denom, 1e-5);
+    // float G = GeometrySmith(NdotV, NdotL, roughness);
+    // float3 nom = D * G * F;
+    // float denom = 4.0 * NdotV * NdotL;
+    // return nom / denom;
 }
 
 float3 MicrofacetGGXBTDF(float3 N, float3 V, float3 L, float3 H, float3 F0, float roughness, float EI, float EO)
@@ -59,11 +64,17 @@ float3 MicrofacetGGXBTDF(float3 N, float3 V, float3 L, float3 H, float3 F0, floa
     float LdotH = abs(dot(L, H));
     float3 F = FresnelSchlick(VdotH, F0);
     float D = DistributionGGX(NdotH, roughness);
-    float G = GeometrySmith(NdotV, NdotL, roughness);
-    float3 nom = VdotH * LdotH * EO * EO * D * G * (1 - F);
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    float3 nom = VdotH * LdotH * EO * EO * D * (1 - F);
     float sqrtDenom = EI * VdotH + EO * LdotH;
-    float denom = NdotV * NdotL * sqrtDenom * sqrtDenom;
+    float denom = sqrtDenom * sqrtDenom * (NdotV * (1.0 - k) + k) * (NdotL * (1.0 - k) + k);
     return nom / max(denom, 1e-5);
+    // float G = GeometrySmith(NdotV, NdotL, roughness);
+    // float3 nom = VdotH * LdotH * EO * EO * D * G * (1 - F);
+    // float sqrtDenom = EI * VdotH + EO * LdotH;
+    // float denom = NdotV * NdotL * sqrtDenom * sqrtDenom;
+    // return nom / max(denom, 1e-5);
 }
 
 float3 LambertBRDF(float3 N, float3 V, float3 L,float3 baseColor)
