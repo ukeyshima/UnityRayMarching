@@ -435,6 +435,7 @@ Shader "Hidden/Sessions2025"
             #define ITER_MAX (iterMax)
             #define BOUNCE_LIMIT (bounceLimit)
             #define MAX_DISTANCE (maxDistance)
+            #define FRAME_COUNT (_FrameCount)
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayTrace.hlsl"
             
             #ifdef _RAYMARCHING_UNLIT

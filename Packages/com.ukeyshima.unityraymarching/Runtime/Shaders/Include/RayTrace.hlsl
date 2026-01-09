@@ -33,6 +33,10 @@
 #define BOUNCE_LIMIT 1
 #endif
 
+#ifndef FRAME_COUNT
+#define FRAME_COUNT 1
+#endif
+
 #ifndef INTERSECTION
 #define INTERSECTION(RO, RD, HIT_POS, SURFACE) (RayMarching(RO, RD, HIT_POS, SURFACE))
 #endif
@@ -167,7 +171,7 @@ float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float
             Material m = GET_MATERIAL(s, hitPos);
             acc += m.emission * weight * wBRDF;
             
-            float4 rand = Pcg01(float4(hitPos, (iter * BOUNCE_LIMIT + bounce) + _ElapsedTime));
+            float4 rand = Pcg01(float4(hitPos, FRAME_COUNT + iter * BOUNCE_LIMIT + bounce));
 #ifdef NEXT_EVENT_ESTIMATION
             {
                 int lightId;
