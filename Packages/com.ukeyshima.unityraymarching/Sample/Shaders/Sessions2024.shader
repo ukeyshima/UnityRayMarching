@@ -197,7 +197,7 @@ Shader "Hidden/Sessions2024"
             #define STAIRS_MAP(p) sdTruchetTiledStairs(p - float3(stairsTilingSize * 0.5, stairsTilingSize * 0.5, stairsTilingSize * 0.5), stairsTilingSize)
             float3 GetStairsGrad(float3 p)
             {
-                const float e = EPS;
+                const float e = 1e-3;
                 const float2 k = float2(1, -1);
                 return k.xyy * STAIRS_MAP(p + k.xyy * e) +
                        k.yyx * STAIRS_MAP(p + k.yyx * e) +
@@ -472,7 +472,9 @@ Shader "Hidden/Sessions2024"
                 return m;
             }
 
-            #define LIMIT_MARCHING_DISTANCE(D,RD,RP) lerp(D, min(MIN3(((1.0 * step(0.0, RD) - MOD(RP, 1.0)) / RD)) + EPS, D), \
+            #define RAYMARCH_EPS 0.005
+            #define RAY_SURFACE_OFFSET 0.01
+            #define LIMIT_MARCHING_DISTANCE(D,RD,RP) lerp(D, min(MIN3(((1.0 * step(0.0, RD) - MOD(RP, 1.0)) / RD)) + RAYMARCH_EPS, D), \
             step(RP.y, stairsTilingSize * 0.5) * step(-stairsTilingSize * 0.5, RP.y) * step(RP.z, stairsTilingSize * 0.5) * step(-stairsTilingSize * 0.5, RP.z) * \
             (step(RP.x, -stairsWidth - wallWidth + wallWidth * 8.0) * step(-stairsWidth - wallWidth - wallWidth * 8.0, RP.x) + step(RP.x, stairsWidth + wallWidth + wallWidth * 8.0) * step(stairsWidth + wallWidth - wallWidth * 8.0, RP.x))\
             )

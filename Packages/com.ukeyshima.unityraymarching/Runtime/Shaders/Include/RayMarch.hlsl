@@ -12,6 +12,10 @@
 #define STEP_COUNT 70
 #endif
 
+#ifndef RAYMARCH_EPS
+#define RAYMARCH_EPS 1e-3
+#endif
+
 #ifndef MAX_DISTANCE
 #define MAX_DISTANCE 1000.0
 #endif
@@ -22,7 +26,7 @@
 
 float3 GetGrad(float3 p)
 {
-    const float e = EPS;
+    const float e = RAYMARCH_EPS;
     const float2 k = float2(1, -1);
     return k.xyy * MAP(p + k.xyy * e).distance +
            k.yyx * MAP(p + k.yyx * e).distance +
@@ -45,8 +49,13 @@ bool RayMarching(float3 ro, float3 rd, out float3 rp, out Surface s)
     for (int i = 0; i < STEP_COUNT; i++)
     {
         s = MAP(rp);
+#ifdef RAYMARCH_INTERIOR        
         float d = abs(s.distance);
-        hit = d < EPS;
+        hit = d < RAYMARCH_EPS;
+#else
+        float d = s.distance;
+        hit = d < abs(RAYMARCH_EPS);
+#endif        
         if (hit){ break; }
         if (rl > MAX_DISTANCE){ break; }
         d = LIMIT_MARCHING_DISTANCE(d, rd, rp);

@@ -17,7 +17,6 @@ Shader "Hidden/Sessions2025"
 
             #pragma target 5.0
             
-            #define EPS 0.002
             #include "UnityCG.cginc"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Common.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/DistanceFunction.hlsl"
@@ -418,7 +417,9 @@ Shader "Hidden/Sessions2025"
             {
                 return VisibleSpherePDF(lightRadius, lightPos, p, l);
             }
-            
+
+            #define RAYMARCH_EPS 0.002
+            #define RAY_SURFACE_OFFSET 0.004
             #define MAP(RP) Map(RP)
             #define GET_MATERIAL(S, RP) GetMaterial(S, RP)
             #define NEXT_EVENT_ESTIMATION

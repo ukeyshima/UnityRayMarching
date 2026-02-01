@@ -29,6 +29,10 @@
 #define BOUNCE_LIMIT 1
 #endif
 
+#ifndef RAY_SURFACE_OFFSET
+#define RAY_SURFACE_OFFSET 1e-2
+#endif
+
 #ifndef FRAME_COUNT
 #define FRAME_COUNT 1
 #endif
@@ -114,8 +118,6 @@ void SampleBRDF(float2 xi, Material m, float3 n, bool withSample, in float3 v, i
     float wSpec = (F.x + F.y + F.z) / 3.0;
     float wDiff = (1.0 - wSpec) * (1.0 - m.transmission);
     float wTrans = (1.0 - wSpec) * m.transmission;
-
-    ndotl = max(dot(normal, l), 0.0);
     
     if (withSample)
     {
@@ -124,21 +126,25 @@ void SampleBRDF(float2 xi, Material m, float3 n, bool withSample, in float3 v, i
         {
             l = reflect(-v, ImportanceSampleGGX(xi, r, normal));
             ndotl = max(dot(normal, l), 0.0);
-            ro = ro + normal * EPS * 2.0;
+            ro = ro + normal * RAY_SURFACE_OFFSET;
         }
         else if (x.x < wSpec + wDiff)
         {
             l = ImportanceSampleCosine(xi, normal);
             ndotl = max(dot(normal, l), 0.0);
-            ro = ro + normal * EPS * 2.0;
+            ro = ro + normal * RAY_SURFACE_OFFSET;
         }
         else
         {
             float3 h = ImportanceSampleGGX(xi, r, normal);
             l = refract(-v, h, etaI / etaO);
             ndotl = max(-dot(normal, l), 0.0);
-            ro = ro - normal * EPS * 2.0;
+            ro = ro - normal * RAY_SURFACE_OFFSET;
         }
+    }
+    else
+    {
+        ndotl = max(dot(normal, l), 0.0);
     }
     
     float3 h = normalize(v + l);
@@ -201,7 +207,7 @@ float3 PathTrace(float3 ro, float3 rd, float3 color, float3 weight)
 #ifdef NEXT_EVENT_ESTIMATION
         {
             int lightId;
-            float3 lro = hitPos + normal * EPS * 2.0;
+            float3 lro = hitPos + normal * RAY_SURFACE_OFFSET;
             float3 lLight = SAMPLE_LIGHT(rand.w, hitPos, lightId);
             float pdfLight = SAMPLE_LIGHT_PDF(hitPos, lLight);
             float3 hitLightPos;
@@ -235,7 +241,7 @@ float3 PathTrace(float3 ro, float3 rd, float3 color, float3 weight)
         if (rand.z < RUSSIAN_ROULETTE){ break; }
         weight /= (1.0 - RUSSIAN_ROULETTE);
         
-        if (dot(weight, weight) < EPS) { break; }
+        if (dot(weight, weight) < 1e-20) { break; }
     }
     return acc;
 }

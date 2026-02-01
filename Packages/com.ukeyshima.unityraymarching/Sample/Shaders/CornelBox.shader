@@ -108,7 +108,6 @@ Shader "Hidden/CornelBox"
             #define SAMPLE_LIGHT(X, P, ID) SampleLight(X, P, ID)
             #define SAMPLE_LIGHT_PDF(P, L) SampleLightPdf(P, L)
 #endif
-            #define RUSSIAN_ROULETTE (0.0)
             #define STEP_COUNT (_MarchingStep)
             #define BOUNCE_LIMIT (_BounceLimit)
             #define MAX_DISTANCE (_MaxDistance)
