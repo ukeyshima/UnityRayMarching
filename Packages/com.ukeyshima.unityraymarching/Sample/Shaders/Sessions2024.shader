@@ -2,14 +2,14 @@ Shader "Hidden/Sessions2024"
 {
     Properties
     {
-        marchingStep("Marching Step", Float) = 80
-        maxDistance("Max Distance", Float) = 1000
-        focalLength("Focal Length", Float) = 1.5
+        _MarchingStep("Marching Step", Float) = 80
+        _MaxDistance("Max Distance", Float) = 1000
+        _BounceLimit ("Bounce Limit", Int) = 1
+        _IterMax ("Iteration Max", Int) = 1
+        _LensDistance("Lens Distance", Float) = 1.5
         stairsHeight ("Stairs Height", Float) = 10.5
         stairsWidth ("Stairs Width", Float) = 11
         stairsTilingSize ("Stairs Tiling Size", Float) = 150
-        bounceLimit ("Bounce Limit", Int) = 1
-        iterMax ("Iteration Max", Int) = 1
         ballRadius ("ballRadius", Float) = 5.0
         deltaTime ("deltaTime", Float) = 0.05
         gravity ("gravity", Float) = 1
@@ -59,12 +59,13 @@ Shader "Hidden/Sessions2024"
             float _ElapsedTime;
             int _FrameCount;
             float2 _Resolution;
-
-            float focalLength, marchingStep, maxDistance;
-            int bounceLimit, iterMax;
+            float _MarchingStep, _MaxDistance;
+            int _BounceLimit, _IterMax;
+            float _LensDistance;
+            
+            static float3 _CameraPos, _CameraDir, _CameraUp;
+            
             float stairsHeight, stairsWidth, stairsTilingSize;
-
-            static float3 cameraPos, cameraDir, cameraUp;
             static const float wallWidth = 0.48;
             static const int ballNum = 15;
             float ballRadius;
@@ -132,40 +133,40 @@ Shader "Hidden/Sessions2024"
             }
 
             void CalcCameraParams(){
-                if(phaseFrag[10] < 0.5) cameraUp = float3(0.0, 1.0, 0.0);
-                if(phaseFrag[10] > 0.5) cameraUp = float3(0.0, cos(-phaseTime * 0.1 + PI * 0.25), sin(-phaseTime * 0.1 + PI * 0.25));
+                if(phaseFrag[10] < 0.5) _CameraUp = float3(0.0, 1.0, 0.0);
+                if(phaseFrag[10] > 0.5) _CameraUp = float3(0.0, cos(-phaseTime * 0.1 + PI * 0.25), sin(-phaseTime * 0.1 + PI * 0.25));
 
-                if(phaseFrag[0] > 0.5) cameraDir = float3(0.0, 0.0, 1.0);
-                if(phaseFrag[1] > 0.5) cameraDir = float3(cos(phaseTime * 0.1), 0.0, sin(phaseTime * 0.1));
-                if(phaseFrag[2] > 0.5) cameraDir = float3(cos(phaseTime * 0.1 + PI * 0.75), 0.0, sin(phaseTime * 0.1 + PI * 0.75));
-                if(phaseFrag[3] > 0.5) cameraDir = float3(cos(-phaseTime * 0.07 + PI), sin(-phaseTime * 0.08 + PI), sin(-phaseTime * 0.07 + PI));
-                if(phaseFrag[4] > 0.5) cameraDir = float3(-1.0, 0.2, 0.8);
-                if(phaseFrag[5] > 0.5) cameraDir = float3(-1.0, 0.0, 1.0);
-                if(phaseFrag[6] > 0.5) cameraDir = float3(-1.5, sin(-phaseTime * 0.08 + PI), 1.0);
-                if(phaseFrag[7] > 0.5) cameraDir = float3(1.0, sin(-phaseTime * 0.08 + PI), 1.0);
-                if(phaseFrag[8] > 0.5) cameraDir = float3(0.0, 0.0, 1.0);
-                if(phaseFrag[9] > 0.5) cameraDir = float3(cos(phaseTime * 0.2 + PI * 0.25), 0.0, sin(phaseTime * 0.2 + PI * 0.25));
-                if(phaseFrag[10] > 0.5) cameraDir = float3(0.0, cos(-phaseTime * 0.1 + PI * 0.6), sin(-phaseTime * 0.1 + PI * 0.6));
-                if(phaseFrag[11] > 0.5) cameraDir = float3(0.0, 0.0, 1.0);
-                if(phaseFrag[12] > 0.5) cameraDir = float3(cos(-phaseTime * 0.1 + PI * 0.25), 0.0, sin(-phaseTime * 0.1 + PI * 0.25));
-                if(phaseFrag[13] > 0.5) cameraDir = float3(float3(cos(phaseTime * 0.1 + PI * 0.5), -sin(phaseTime * 0.1 + PI * 0.5), sin(phaseTime * 0.1 + PI * 0.5)));
-                if(phaseFrag[14] > 0.5) cameraDir = float3(cos(phaseTime * 0.1 + PI * 1.5), -0.5, sin(phaseTime * 0.1 + PI * 1.5));
+                if(phaseFrag[0] > 0.5) _CameraDir = float3(0.0, 0.0, 1.0);
+                if(phaseFrag[1] > 0.5) _CameraDir = float3(cos(phaseTime * 0.1), 0.0, sin(phaseTime * 0.1));
+                if(phaseFrag[2] > 0.5) _CameraDir = float3(cos(phaseTime * 0.1 + PI * 0.75), 0.0, sin(phaseTime * 0.1 + PI * 0.75));
+                if(phaseFrag[3] > 0.5) _CameraDir = float3(cos(-phaseTime * 0.07 + PI), sin(-phaseTime * 0.08 + PI), sin(-phaseTime * 0.07 + PI));
+                if(phaseFrag[4] > 0.5) _CameraDir = float3(-1.0, 0.2, 0.8);
+                if(phaseFrag[5] > 0.5) _CameraDir = float3(-1.0, 0.0, 1.0);
+                if(phaseFrag[6] > 0.5) _CameraDir = float3(-1.5, sin(-phaseTime * 0.08 + PI), 1.0);
+                if(phaseFrag[7] > 0.5) _CameraDir = float3(1.0, sin(-phaseTime * 0.08 + PI), 1.0);
+                if(phaseFrag[8] > 0.5) _CameraDir = float3(0.0, 0.0, 1.0);
+                if(phaseFrag[9] > 0.5) _CameraDir = float3(cos(phaseTime * 0.2 + PI * 0.25), 0.0, sin(phaseTime * 0.2 + PI * 0.25));
+                if(phaseFrag[10] > 0.5) _CameraDir = float3(0.0, cos(-phaseTime * 0.1 + PI * 0.6), sin(-phaseTime * 0.1 + PI * 0.6));
+                if(phaseFrag[11] > 0.5) _CameraDir = float3(0.0, 0.0, 1.0);
+                if(phaseFrag[12] > 0.5) _CameraDir = float3(cos(-phaseTime * 0.1 + PI * 0.25), 0.0, sin(-phaseTime * 0.1 + PI * 0.25));
+                if(phaseFrag[13] > 0.5) _CameraDir = float3(float3(cos(phaseTime * 0.1 + PI * 0.5), -sin(phaseTime * 0.1 + PI * 0.5), sin(phaseTime * 0.1 + PI * 0.5)));
+                if(phaseFrag[14] > 0.5) _CameraDir = float3(cos(phaseTime * 0.1 + PI * 1.5), -0.5, sin(phaseTime * 0.1 + PI * 1.5));
 
-                if(phaseFrag[0] > 0.5) cameraPos = (float3(0.0, -20.0, 15.0) + cameraDir * phaseTime * 0.8);
-                if(phaseFrag[1] > 0.5) cameraPos = (float3(0.0, -20.0, 15.0));
-                if(phaseFrag[2] > 0.5) cameraPos = (float3(0.0, -20.0, 15.0));
-                if(phaseFrag[3] > 0.5) cameraPos = (float3(0.0, -20.0, 15.0));
-                if(phaseFrag[4] > 0.5) cameraPos = (float3(4.0, -62.0, 1.0));
-                if(phaseFrag[5] > 0.5) cameraPos = (float3(0.0, -50.0 + phaseTime * 1.0, -15.0 + phaseTime * 1.0));
-                if(phaseFrag[6] > 0.5) cameraPos = (float3(4.0, -40.0, 1.0));
-                if(phaseFrag[7] > 0.5) cameraPos = (float3(2.0, -30.0, 1.0));
-                if(phaseFrag[8] > 0.5) cameraPos = (float3(0.0, -10.0 + phaseTime * 1.0, 25.0 + phaseTime * 1.0));
-                if(phaseFrag[9] > 0.5) cameraPos = (float3(0.0, 20.0, 55.0));
-                if(phaseFrag[10] > 0.5) cameraPos = (float3(0.0, 20.0, 55.0));
-                if(phaseFrag[11] > 0.5) cameraPos = (float3(0.0, 20.0, 55.0 + phaseTime * 1.5));
-                if(phaseFrag[12] > 0.5) cameraPos = (float3(0.0, 15.0, 225.0) - cameraDir * 50.0);
-                if(phaseFrag[13] > 0.5) cameraPos = (float3(0.0, 15.0, 225.0)  - cameraDir * 80.0);
-                if(phaseFrag[14] > 0.5) cameraPos = (float3(0.0, 25.0, 75.0) - cameraDir * 130.0);
+                if(phaseFrag[0] > 0.5) _CameraPos = (float3(0.0, -20.0, 15.0) + _CameraDir * phaseTime * 0.8);
+                if(phaseFrag[1] > 0.5) _CameraPos = (float3(0.0, -20.0, 15.0));
+                if(phaseFrag[2] > 0.5) _CameraPos = (float3(0.0, -20.0, 15.0));
+                if(phaseFrag[3] > 0.5) _CameraPos = (float3(0.0, -20.0, 15.0));
+                if(phaseFrag[4] > 0.5) _CameraPos = (float3(4.0, -62.0, 1.0));
+                if(phaseFrag[5] > 0.5) _CameraPos = (float3(0.0, -50.0 + phaseTime * 1.0, -15.0 + phaseTime * 1.0));
+                if(phaseFrag[6] > 0.5) _CameraPos = (float3(4.0, -40.0, 1.0));
+                if(phaseFrag[7] > 0.5) _CameraPos = (float3(2.0, -30.0, 1.0));
+                if(phaseFrag[8] > 0.5) _CameraPos = (float3(0.0, -10.0 + phaseTime * 1.0, 25.0 + phaseTime * 1.0));
+                if(phaseFrag[9] > 0.5) _CameraPos = (float3(0.0, 20.0, 55.0));
+                if(phaseFrag[10] > 0.5) _CameraPos = (float3(0.0, 20.0, 55.0));
+                if(phaseFrag[11] > 0.5) _CameraPos = (float3(0.0, 20.0, 55.0 + phaseTime * 1.5));
+                if(phaseFrag[12] > 0.5) _CameraPos = (float3(0.0, 15.0, 225.0) - _CameraDir * 50.0);
+                if(phaseFrag[13] > 0.5) _CameraPos = (float3(0.0, 15.0, 225.0)  - _CameraDir * 80.0);
+                if(phaseFrag[14] > 0.5) _CameraPos = (float3(0.0, 25.0, 75.0) - _CameraDir * 130.0);
             }
 
             float sdTruchetStairs(float3 p, float s, float t)
@@ -477,23 +478,21 @@ Shader "Hidden/Sessions2024"
             )
             #define MAP(P) Map(P)
             #define GET_MATERIAL(S, RP) GetMaterial(S, RP)
-            #define STEP_COUNT (marchingStep)
-            #define ITER_MAX (iterMax)
-            #define BOUNCE_LIMIT (bounceLimit)
-            #define MAX_DISTANCE (maxDistance)
+            #define STEP_COUNT (_MarchingStep)
+            #define BOUNCE_LIMIT (_BounceLimit)
+            #define MAX_DISTANCE (_MaxDistance)
             #define FRAME_COUNT (_FrameCount)
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayTrace.hlsl"
 
-
             #ifdef _RAYMARCHING_UNLIT
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Unlit(RO, RD, COL, POS, NORMAL, SURFACE)
+                #define SAMPLE_RADIANCE(RO, RD, COL, WEIGHT) Unlit(RO, RD, COL)
             #elif _RAYMARCHING_BASIC
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Diffuse(RO, RD, COL, POS, NORMAL, SURFACE)
+                #define SAMPLE_RADIANCE(RO, RD, COL, WEIGHT) Diffuse(RO, RD, COL)
             #elif _RAYMARCHING_PATHTRACE
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) PathTrace(RO, RD, COL, POS, NORMAL, SURFACE)
+                #define SAMPLE_RADIANCE(RO, RD, COL, WEIGHT) PathTrace(RO, RD, COL, WEIGHT)
             #endif
 
-            MRTOutput frag (v2f i)
+            float4 frag (v2f i) : SV_Target
             {
                 float2 r = _Resolution;
                 int2 fragCoord = floor(i.uv * r);
@@ -502,24 +501,22 @@ Shader "Hidden/Sessions2024"
                 CalcPhase();
                 CalcCameraParams();
                 LoadBallParams(r);
-                float4 col = float4(0.0, 0.0, 0.0, 1.0);
-                float3 p = float3((fragCoord * 2.0 - r) / min(r.x, r.y), 0.0);
-                cameraDir = normalize(cameraDir);
-                cameraUp = normalize(cameraUp);
-                float3 cameraRight = CROSS(cameraUp, cameraDir);
-                cameraUp = CROSS(cameraDir, cameraRight);
-                float3 ray = normalize(cameraRight * p.x + cameraUp * p.y + cameraDir * focalLength);
-                float3 ro = cameraPos;
-                float3 rd = ray;
-                float3 hitPos, normal;
-                Surface surface;
-                col.xyz = SAMPLE_RADIANCE(ro, rd, col.xyz, hitPos, normal, surface);
+                float2 p = float2(fragCoord * 2.0 - r) / min(r.x, r.y);
+                randomSeed = Pcg01(float4(p, _FrameCount, Pcg(_FrameCount)));
+                _CameraDir = normalize(_CameraDir);
+                _CameraUp = normalize(_CameraUp);
+                float3 cameraRight = CROSS(_CameraUp, _CameraDir);
+                _CameraUp = CROSS(_CameraDir, cameraRight);
+                float3 ro = _CameraPos;
+                float3 rd = normalize(cameraRight * p.x + _CameraUp * p.y + _CameraDir * _LensDistance);
+                float4 col = OOOO;
+                for (int iter = 0; iter < _IterMax; iter++)
+                {
+                    col.xyz += SAMPLE_RADIANCE(ro, rd, OOO, III);    
+                }
+                col.xyz = col.xyz / _IterMax;
                 SaveBallParams(fragCoord, col);
-                MRTOutput o;
-                o.color = float4(col.xyz, 1.0);
-                o.normalDepth = float4(normal, 0.0);
-                o.position = float4(hitPos, 0.0);
-                return o;
+                return float4(col.xyz, 1.0);
             }
 
             #pragma vertex vert

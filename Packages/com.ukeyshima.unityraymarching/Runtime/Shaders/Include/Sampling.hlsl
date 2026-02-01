@@ -4,6 +4,12 @@
 #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Common.hlsl"
 #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Transform.hlsl"
 
+float2 SampleCircle(float2 xi)
+{
+	float phi = 2.0 * PI * xi.x;
+	return float2(cos(phi), sin(phi)) * sqrt(xi.y);
+}
+
 float3 SampleSphereWeighted(float2 xi, float3 dir, float w)
 {
 	float phi = 2.0 * PI * xi.x;

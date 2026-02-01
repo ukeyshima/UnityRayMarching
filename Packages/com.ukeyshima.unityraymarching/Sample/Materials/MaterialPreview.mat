@@ -12,7 +12,9 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _CAMERA_THINLENS
   - _RAYMARCHING_PATHTRACE
+  - _SAMPLING_NEE
   m_InvalidKeywords:
   - _RAYMARCHING_RAYMARCHINGREFLECTION
   m_LightmapFlags: 4
@@ -63,7 +65,9 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _BounceLimit: 5
     - _BumpScale: 1
+    - _CAMERA: 1
     - _ColorCoefficient: 0.01
     - _ColorCoefficient2: 0.005
     - _Cutoff: 0.5
@@ -72,17 +76,28 @@ Material:
     - _DstBlend: 0
     - _EmissionGamma: -0.1
     - _EmissionIntensity: 1
+    - _Exposure: 5
+    - _FocusDistance: 30
+    - _FocusDistane: 30
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _IterMax: 1
+    - _LensDistance: 1.5
+    - _LensRadius: 0.5
+    - _LightRadius: 150
     - _MarchingStep: 100
+    - _MaxDistance: 1000
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _RayMarching: 2
     - _Roughness: 0
+    - _SAMPLING: 1
     - _SampleOnHit: 9976
+    - _SensorArea: 0.5
+    - _SensorSize: 1.94
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -106,11 +121,11 @@ Material:
     - stepCoefficient: 0.5
     - stepCoefficient2: 0.5
     m_Colors:
-    - _CameraDir: {r: 0, g: -0.5000001, b: 0.8660253, a: 0}
-    - _CameraPos: {r: 0, g: 20, b: 300, a: 0}
-    - _CameraUp: {r: 0, g: 0.8660253, b: 0.5000001, a: 0}
+    - _CameraDir: {r: 0, g: -0.34202018, b: 0.9396926, a: 0}
+    - _CameraPos: {r: 0, g: 1.7101007, b: -4.698463, a: 0}
+    - _CameraUp: {r: 0, g: 0.9396926, b: 0.34202018, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _LightPos: {r: 0, g: 0, b: 0, a: 0}
+    - _LightPos: {r: 0, g: 500, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

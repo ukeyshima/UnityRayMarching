@@ -2,13 +2,9 @@ Shader "Hidden/Sessions2025"
 {
     Properties
     {
-        marchingStep("Marching Step", Float) = 80
-        maxDistance("Max Distance", Float) = 1000
-        focalLength("Focal Length", Float) = 1.5
-        bounceLimit ("Bounce Limit", Int) = 1
-        iterMax ("Iteration Max", Int) = 1
-        gamma("Gamma", Float) = 2.2
-        eps("Epsilon", Float) = 0.001
+        _MarchingStep("Marching Step", Float) = 80
+        _MaxDistance("Max Distance", Float) = 1000
+        _LensDistance("Lens Distance", Float) = 1.5
         [KeywordEnum(Unlit, Basic, PathTrace)] _RayMarching ("Ray Marching", Float) = 0
     }
     SubShader
@@ -21,7 +17,7 @@ Shader "Hidden/Sessions2025"
 
             #pragma target 5.0
             
-            #define EPS eps
+            #define EPS 0.002
             #include "UnityCG.cginc"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Common.hlsl"
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/DistanceFunction.hlsl"
@@ -51,13 +47,11 @@ Shader "Hidden/Sessions2025"
             float _ElapsedTime;
             int _FrameCount;
             float2 _Resolution;
+            float _MarchingStep, _MaxDistance;
+            int _BounceLimit, _IterMax;
+            float _LensDistance;
 
-            float focalLength, marchingStep, maxDistance;
-            int bounceLimit, iterMax;
-            float eps, gamma;
-
-            static float3 cameraPos, cameraDir, cameraUp;
-            float3 _CameraPos, _CameraDir, _CameraUp;
+            static float3 _CameraPos, _CameraDir, _CameraUp;
 
             static const float roomSize = 10.0;
             static const float cubeSize = 2.0;
@@ -430,30 +424,23 @@ Shader "Hidden/Sessions2025"
             #define NEXT_EVENT_ESTIMATION
             #define SAMPLE_LIGHT(X, P, ID) SampleLight(X, P, ID)
             #define SAMPLE_LIGHT_PDF(P, L) SampleLightPdf(P, L)
-            #define RUSSIAN_ROULETTE 0.0
-            #define STEP_COUNT (marchingStep)
-            #define ITER_MAX (iterMax)
-            #define BOUNCE_LIMIT (bounceLimit)
-            #define MAX_DISTANCE (maxDistance)
+            #define STEP_COUNT (_MarchingStep)
+            #define BOUNCE_LIMIT (_BounceLimit)
+            #define MAX_DISTANCE (_MaxDistance)
             #define FRAME_COUNT (_FrameCount)
             #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayTrace.hlsl"
             
             #ifdef _RAYMARCHING_UNLIT
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Unlit(RO, RD, COL, POS, NORMAL, SURFACE)
+                #define SAMPLE_RADIANCE(RO, RD, COL, WEIGHT) Unlit(RO, RD, COL)
             #elif _RAYMARCHING_BASIC
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) Diffuse(RO, RD, COL, POS, NORMAL, SURFACE)
+                #define SAMPLE_RADIANCE(RO, RD, COL, WEIGHT) Diffuse(RO, RD, COL)
             #elif _RAYMARCHING_PATHTRACE
-                #define SAMPLE_RADIANCE(RO, RD, COL, POS, NORMAL, SURFACE) PathTrace(RO, RD, COL, POS, NORMAL, SURFACE)
+                #define SAMPLE_RADIANCE(RO, RD, COL, WEIGHT) PathTrace(RO, RD, COL, WEIGHT)
             #endif
 
             void Scene()
             {
                 float t = time;
-                
-                cameraUp = _CameraUp;
-                cameraDir = _CameraDir;
-                cameraPos = _CameraPos;
-
                 cubePos = OJO * (roomSize - cubeSize * 0.5) +
                           OOI * (roomSize - cubeSize * 0.5) +
                           JOO * (roomSize - cubeSize * 0.5 - 1.0);
@@ -463,144 +450,144 @@ Shader "Hidden/Sessions2025"
                 lightEmission = III;
                 cubeType = 4;
                 wallType = 0;
-                cameraUp = OIO;
+                _CameraUp = OIO;
                 hilbertStartTime = 14.5 * 8.0 / BPS;
                 
                  if (t < 2.0 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-1.7, -8.3, 1.0);
-                     cameraPos += IOO * sin(t * 1.2) +
+                     _CameraPos = float3(-1.7, -8.3, 1.0);
+                     _CameraPos += IOO * sin(t * 1.2) +
                                   OIO * cos(t * 0.2) * 1.1 + 
                                   OOI * cos(t * 0.5);
-                     cameraDir = normalize(cubePos - cameraPos);
-                     cameraDir += IOO * sin(t * 1.2) * 0.2 +
+                     _CameraDir = normalize(cubePos - _CameraPos);
+                     _CameraDir += IOO * sin(t * 1.2) * 0.2 +
                                   OIO * cos(t * 0.2 - PI) * 0.5;
                      lightRadius = 0.1;
                      cubeType = 0;
-                     bounceLimit = 2;
-                     iterMax = 4;
+                     _BounceLimit = 2;
+                     _IterMax = 4;
                  }
                  else if (t < 4.0 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-3.7, -9.3, 5.0);
-                     cameraDir = normalize(cubePos - cameraPos);
-                     cameraDir += IOO * sin(t * 1.2) * 0.1 +
+                     _CameraPos = float3(-3.7, -9.3, 5.0);
+                     _CameraDir = normalize(cubePos - _CameraPos);
+                     _CameraDir += IOO * sin(t * 1.2) * 0.1 +
                                   OIO * cos(t * 0.15 - PI) * 0.3;
                      lightRadius = 0.1;
                      cubeType = 0;
-                     bounceLimit = 2;
-                     iterMax = 4;
+                     _BounceLimit = 2;
+                     _IterMax = 4;
                  }
                  else if (t < 6.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-6.31, -9.64, 7.49);
-                     cameraDir = normalize(cubePos - OIO - cameraPos);
-                     cameraDir += IOO * sin(t * 0.5) * 0.1 +
+                     _CameraPos = float3(-6.31, -9.64, 7.49);
+                     _CameraDir = normalize(cubePos - OIO - _CameraPos);
+                     _CameraDir += IOO * sin(t * 0.5) * 0.1 +
                                   OIO * cos(t * 0.15 - PI) * 0.3;
                      lightRadius = 0.1;
                      cubeType = 0;
-                     bounceLimit = 2;
-                     iterMax = 4;
+                     _BounceLimit = 2;
+                     _IterMax = 4;
                  }
                  else if (t < 8.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-6.31, -9.64, 7.49);
-                     cameraDir = normalize(cubePos - OIJ - cameraPos);
+                     _CameraPos = float3(-6.31, -9.64, 7.49);
+                     _CameraDir = normalize(cubePos - OIJ - _CameraPos);
                      cubeType = 1;
-                     bounceLimit = 2;
-                     iterMax = 2;
+                     _BounceLimit = 2;
+                     _IterMax = 2;
                  }
                  else if (t < 10.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-5.93, -7.4, 7.49);
-                     cameraDir = normalize(cubePos - OJI - cameraPos);
+                     _CameraPos = float3(-5.93, -7.4, 7.49);
+                     _CameraDir = normalize(cubePos - OJI - _CameraPos);
                      cubeType = 1;
-                     bounceLimit = 2;
-                     iterMax = 2;
+                     _BounceLimit = 2;
+                     _IterMax = 2;
                  }
                  else if (t < 11.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-5.93, -7.4, 7.49);
-                     cameraDir = normalize(cubePos - OJI - cameraPos);
-                     cameraDir += IOO * sin(t * 0.5) * 0.1 +
+                     _CameraPos = float3(-5.93, -7.4, 7.49);
+                     _CameraDir = normalize(cubePos - OJI - _CameraPos);
+                     _CameraDir += IOO * sin(t * 0.5) * 0.1 +
                                   OIO * cos(t * 0.15) * 0.3;
                      cubeType = 2;
                      wallType = 1;
-                     bounceLimit = 1;
-                     iterMax = 7;
+                     _BounceLimit = 1;
+                     _IterMax = 7;
                  }
                  else if (t < 12.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-6.31, -9.64, 7.49);
-                     cameraDir = normalize(cubePos - OIJ - cameraPos);
-                     cameraDir += IOO * sin(t * 0.5) * 0.1 +
+                     _CameraPos = float3(-6.31, -9.64, 7.49);
+                     _CameraDir = normalize(cubePos - OIJ - _CameraPos);
+                     _CameraDir += IOO * sin(t * 0.5) * 0.1 +
                                   OIO * cos(t * 0.15) * 0.3;
                      cubeType = 2;
                      wallType = 1;
-                     bounceLimit = 1;
-                     iterMax = 7;
+                     _BounceLimit = 1;
+                     _IterMax = 7;
                  }
                  else if (t < 14.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-1.7, -8.3, 1.0);
-                     cameraDir = normalize(cubePos - cameraPos);
-                     cameraDir += IOO * sin(t * 0.5) * 0.1 +
+                     _CameraPos = float3(-1.7, -8.3, 1.0);
+                     _CameraDir = normalize(cubePos - _CameraPos);
+                     _CameraDir += IOO * sin(t * 0.5) * 0.1 +
                                   OIO * cos(t * 0.15 - PI) * 0.3;
                      cubeType = 2;
                      wallType = 1;
-                     bounceLimit = 1;
-                     iterMax = 7;
+                     _BounceLimit = 1;
+                     _IterMax = 7;
                  }
                  else if (t < 15.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-6.31, -9.4, 7.5);
-                     cameraDir = normalize(cubePos - OIJ - cameraPos);
+                     _CameraPos = float3(-6.31, -9.4, 7.5);
+                     _CameraDir = normalize(cubePos - OIJ - _CameraPos);
                      cubeType = 3;
-                     bounceLimit = 1;
-                     iterMax = 2;
+                     _BounceLimit = 1;
+                     _IterMax = 2;
                  }
                  else if (t < 16.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-8.93, -9.05, 6.0);
-                     cameraDir = normalize(cubePos - OIJ - cameraPos);
+                     _CameraPos = float3(-8.93, -9.05, 6.0);
+                     _CameraDir = normalize(cubePos - OIJ - _CameraPos);
                      cubeType = 3;
-                     bounceLimit = 1;
-                     iterMax = 2;
+                     _BounceLimit = 1;
+                     _IterMax = 2;
                  }
                  else if (t < 17.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-5.93, -7.4, 7.49);
-                     cameraDir = normalize(cubePos - OJI - cameraPos);
+                     _CameraPos = float3(-5.93, -7.4, 7.49);
+                     _CameraDir = normalize(cubePos - OJI - _CameraPos);
                      cubeType = 3;
-                     bounceLimit = 1;
-                     iterMax = 2;
+                     _BounceLimit = 1;
+                     _IterMax = 2;
                  }
                  else if (t < 18.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-5.11, -8.1, 5.9);
-                     cameraDir = normalize(cubePos - cameraPos);
+                     _CameraPos = float3(-5.11, -8.1, 5.9);
+                     _CameraDir = normalize(cubePos - _CameraPos);
                      cubeType = 3;
-                     bounceLimit = 1;
-                     iterMax = 2;
+                     _BounceLimit = 1;
+                     _IterMax = 2;
                  }
                  else if (t < 20.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-5.7, -8.0, 6.0);
-                     cameraPos += IOO * sin(t * 1.15) +
+                     _CameraPos = float3(-5.7, -8.0, 6.0);
+                     _CameraPos += IOO * sin(t * 1.15) +
                                   OOI * cos(t * 0.75) * 1.2 +
                                   OIO * cos(t * 0.125) * 1.5;
-                     cameraDir = normalize(cubePos - cameraPos);
+                     _CameraDir = normalize(cubePos - _CameraPos);
                      cubeType = 4;
-                     bounceLimit = 2;
-                     iterMax = 2;
+                     _BounceLimit = 2;
+                     _IterMax = 2;
                  }
                  else if (t < 22.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-5.7, -8.0, 6.0);
-                     cameraPos += IOO * sin(t * 1.15) +
+                     _CameraPos = float3(-5.7, -8.0, 6.0);
+                     _CameraPos += IOO * sin(t * 1.15) +
                                   OOI * cos(t * 0.75) * 1.2 +
                                   OIO * cos(t * 0.125) * 1.5;
-                     cameraDir = normalize(cubePos - cameraPos);
+                     _CameraDir = normalize(cubePos - _CameraPos);
                      wallRoughness = 0.0;
                      lightPos += OIO * 3.0 +
                                  IOO * sin(time) +
@@ -608,97 +595,97 @@ Shader "Hidden/Sessions2025"
                      lightRadius = 1.0;
                      lightEmission = IOO;
                      cubeType = 4;
-                     bounceLimit = 2;
-                     iterMax = 5;
+                     _BounceLimit = 2;
+                     _IterMax = 5;
                  }
                 else if(t < 24.5 * 8.0 / BPS)
                  {
-                    cameraPos = float3(-2.5, -8.3, 4.68);
-                    cameraPos += IOO * sin(t * 1.2) * 1.5 +
+                    _CameraPos = float3(-2.5, -8.3, 4.68);
+                    _CameraPos += IOO * sin(t * 1.2) * 1.5 +
                                  OOI * cos(t * 0.5) +
                                  OIO * cos(t * 0.2);
-                    cameraDir = normalize(cubePos - cameraPos);
+                    _CameraDir = normalize(cubePos - _CameraPos);
                     cubeType = 5;
                     lightRadius += 0.015 * Pcg01(_ElapsedTime);
-                    bounceLimit = 1;
-                    iterMax = 1;
+                    _BounceLimit = 1;
+                    _IterMax = 1;
                  }
                  else if (t < 26.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-8.09, -6.46, 7.21);
-                     cameraPos += IOO * sin(t * 1.2) +
+                     _CameraPos = float3(-8.09, -6.46, 7.21);
+                     _CameraPos += IOO * sin(t * 1.2) +
                                   OOI * cos(t * 0.5 + PI * 1.5) +
                                   OIO * cos(t * 0.2);
-                     cameraDir = normalize(cubePos - cameraPos);
+                     _CameraDir = normalize(cubePos - _CameraPos);
                      cubeType = 5;
                      lightRadius += 0.015 * Pcg01(_ElapsedTime);
-                     bounceLimit = 1;
-                     iterMax = 1;
+                     _BounceLimit = 1;
+                     _IterMax = 1;
                  }
                  else if(t < 27.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-5.93, -7.4, 7.49);
-                     cameraDir = normalize(cubePos - OJI - cameraPos);
-                     cameraDir += IOO * sin(t * 0.5) * 0.1 +
+                     _CameraPos = float3(-5.93, -7.4, 7.49);
+                     _CameraDir = normalize(cubePos - OJI - _CameraPos);
+                     _CameraDir += IOO * sin(t * 0.5) * 0.1 +
                                   OIO * cos(t * 0.15) * 0.3;
                      cubeType = 6;
                      lightRadius += 0.03 * Pcg01(_ElapsedTime);
                      lightPos.y += (-TIME2BEAT(time * 0.25) + 0.5);
-                     bounceLimit = 2;
-                     iterMax = 2;
+                     _BounceLimit = 2;
+                     _IterMax = 2;
                  }
                   else if (t < 28.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-6.31, -9.64, 7.49);
-                     cameraDir = normalize(cubePos - OIJ - cameraPos);
-                     cameraDir += IOO * sin(t * 0.5) * 0.1 +
+                     _CameraPos = float3(-6.31, -9.64, 7.49);
+                     _CameraDir = normalize(cubePos - OIJ - _CameraPos);
+                     _CameraDir += IOO * sin(t * 0.5) * 0.1 +
                                   OIO * cos(t * 0.15) * 0.3;
                      cubeType = 6;
                      lightRadius += 0.03 * Pcg01(_ElapsedTime);
                      lightPos.y += (-TIME2BEAT(time * 0.25) + 0.5);
-                     bounceLimit = 2;
-                     iterMax = 2;
+                     _BounceLimit = 2;
+                     _IterMax = 2;
                  }
                  else if(t < 29.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-1.7, -8.3, 1.0);
-                     cameraDir = normalize(cubePos - cameraPos);
-                     cameraDir += IOO * sin(t * 0.5) * 0.1 +
+                     _CameraPos = float3(-1.7, -8.3, 1.0);
+                     _CameraDir = normalize(cubePos - _CameraPos);
+                     _CameraDir += IOO * sin(t * 0.5) * 0.1 +
                                   OIO * cos(t * 0.15 - PI) * 0.3;
                      cubeType = 6;
                      lightRadius += 0.03 * Pcg01(_ElapsedTime);
                      lightPos.y += (-TIME2BEAT(time * 0.5) + 0.5);
-                     bounceLimit = 2;
-                     iterMax = 2;
+                     _BounceLimit = 2;
+                     _IterMax = 2;
                  }
                   else if (t < 30.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-1.7, -8.3, 1.0);
-                     cameraDir = normalize(cubePos - cameraPos);
-                     cameraDir += IOO * sin(t * 0.5) * 0.1 +
+                     _CameraPos = float3(-1.7, -8.3, 1.0);
+                     _CameraDir = normalize(cubePos - _CameraPos);
+                     _CameraDir += IOO * sin(t * 0.5) * 0.1 +
                                   OIO * cos(t * 0.15 - PI) * 0.3;
                       cubeType = 7;
                       lightRadius += 0.03 * Pcg01(_ElapsedTime);
                       lightPos.y += (-TIME2BEAT(time * 0.5) + 0.5);
-                      bounceLimit = 2;
-                      iterMax = 2;
+                      _BounceLimit = 2;
+                      _IterMax = 2;
                  }
                  else if(t < 31.5 * 8.0 / BPS)
                  {
-                     cameraPos = float3(-1.7, -8.3, 1.0);
-                     cameraDir = normalize(cubePos - cameraPos);
-                     cameraDir += IOO * sin(t * 0.5) * 0.1 +
+                     _CameraPos = float3(-1.7, -8.3, 1.0);
+                     _CameraDir = normalize(cubePos - _CameraPos);
+                     _CameraDir += IOO * sin(t * 0.5) * 0.1 +
                                   OIO * cos(t * 0.15 - PI) * 0.3;
                      cubeType = 7;
                      lightEmission = IOO;
-                     bounceLimit = 2;
-                     iterMax = 2;
+                     _BounceLimit = 2;
+                     _IterMax = 2;
                  }
                  else if(t < 35 * 8.0 / BPS)
                  {
                     lightEmission = OOO;
                  }
-                
+
                 lightEmission *= 5000;
                 lightEmission *= SATURATE(1 - Pcg01(_FrameCount / 4) * exp(-5.0 * frac(t / 8.0 * BPS + (t < 6.5 * 8.0 / BPS ? 0.0 : 0.5)) / BPS * 8.0));
             }
@@ -709,19 +696,26 @@ Shader "Hidden/Sessions2025"
                 Scene();
                 float2 r = _Resolution;
                 int2 fragCoord = floor(i.uv * r);
-                float4 col = float4(OOO, 1.0);
-                float3 p = float3((fragCoord * 2.0 - r) / min(r.x, r.y), 0.0);
-                cameraDir = normalize(cameraDir);
-                cameraUp = normalize(cameraUp);
-                float3 cameraRight = CROSS(cameraUp, cameraDir);
-                cameraUp = CROSS(cameraDir, cameraRight);
-                float3 ro = cameraPos;
-                float3 rd = normalize(cameraRight * p.x + cameraUp * p.y + cameraDir * focalLength);
+                
+                float2 p = float2(fragCoord * 2.0 - r) / min(r.x, r.y);
+                randomSeed = Pcg01(float4(p, _FrameCount, Pcg(_FrameCount)));
+                _CameraDir = normalize(_CameraDir);
+                _CameraUp = normalize(_CameraUp);
+                float3 cameraRight = CROSS(_CameraUp, _CameraDir);
+                _CameraUp = CROSS(_CameraDir, cameraRight);
+                float3 ro = _CameraPos;
+                float3 rd = normalize(cameraRight * p.x + _CameraUp * p.y + _CameraDir * _LensDistance);
+                float3 col = OOO;
+                for (int iter = 0; iter < _IterMax; iter++)
+                {
+                    col += SAMPLE_RADIANCE(ro, rd, OOO, III);    
+                }
+                col = col / _IterMax;
                 float3 hitPos, normal;
                 Surface surface;
-                col.xyz = SAMPLE_RADIANCE(ro, rd, col.xyz, hitPos, normal, surface);
+                INTERSECTION_WITH_NORMAL(ro, rd, hitPos, surface, normal);
                 col = saturate(col);
-                col = pow(col, gamma);
+                col = pow(col, 0.4545455);
                 MRTOutput o;
                 o.color = float4(col.xyz, 1.0);
                 o.normalDepth = float4(normal, 0.0);

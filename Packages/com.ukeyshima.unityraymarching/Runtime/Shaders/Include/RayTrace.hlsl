@@ -25,16 +25,40 @@
 #define RUSSIAN_ROULETTE 0.0
 #endif
 
-#ifndef ITER_MAX
-#define ITER_MAX 1
-#endif
-
 #ifndef BOUNCE_LIMIT
 #define BOUNCE_LIMIT 1
 #endif
 
 #ifndef FRAME_COUNT
 #define FRAME_COUNT 1
+#endif
+
+#ifndef FOCUS_DISTANCE
+#define FOCUS_DISTANCE 10.0
+#endif
+
+#ifndef LENS_DISTANCE
+#define LENS_DISTANCE 1.0
+#endif
+
+#ifndef LENS_RADIUS
+#define LENS_RADIUS 1.0
+#endif
+
+#ifndef CAMERA_POS
+#define CAMERA_POS OOO
+#endif
+
+#ifndef CAMERA_RIGHT
+#define CAMERA_RIGHT IOO
+#endif
+
+#ifndef CAMERA_UP
+#define CAMERA_UP OIO
+#endif
+
+#ifndef CAMERA_DIR
+#define CAMERA_DIR OOI
 #endif
 
 #ifndef INTERSECTION
@@ -47,7 +71,7 @@
 
 #define ROUGHNESS_MIN 1e-4
 
-float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
+float3 Unlit(float3 ro, float3 rd, float3 color)
 {
     float3 hitPos;
     Surface s;
@@ -56,15 +80,12 @@ float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 norm
     if(hit)
     {
         Material m = GET_MATERIAL(s, hitPos);
-        pos = hitPos;
-        normal = n;
-        surface = s;
         return m.baseColor;
     }
     return color;
 }
 
-float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
+float3 Diffuse(float3 ro, float3 rd, float3 color)
 {
     float3 hitPos;
     Surface s;
@@ -73,9 +94,6 @@ float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 no
     if(hit)
     {
         Material m = GET_MATERIAL(s, hitPos);
-        pos = hitPos;
-        normal = n;
-        surface = s;
         return dot(n, -rd) * m.baseColor;
     }
     return color;
@@ -101,7 +119,7 @@ void SampleBRDF(float2 xi, Material m, float3 n, bool withSample, in float3 v, i
     
     if (withSample)
     {
-        float2 x = Pcg01(xi);
+        float2 x = Random2();
         if (x.x < wSpec)
         {
             l = reflect(-v, ImportanceSampleGGX(xi, r, normal));
@@ -134,86 +152,92 @@ void SampleBRDF(float2 xi, Material m, float3 n, bool withSample, in float3 v, i
           GGXPDF(normal, v, l, hTrans, r, etaI, etaO) * wTrans;
 }
 
-float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float3 normal, out Surface surface)
+float ThinLensModel(float2 p, out float3 ro, out float3 rd)
 {
-    float3 sum = OOO;
-    Surface s;
-    float3 hitPos;
-    float3 n;
-    bool hit = INTERSECTION_WITH_NORMAL(ro0, rd0, hitPos, s, n);
-    if(hit)
-    {
-        ro0 = hitPos;
-        pos = hitPos;
-        normal = n;
-        surface = s;
-    }
-    else
-    {
-        return color;
-    }
+    float3 lensCenter = CAMERA_POS + CAMERA_DIR * LENS_DISTANCE;
+    float3 sensorPoint = CAMERA_POS + CAMERA_RIGHT * p.x + CAMERA_UP * p.y;
+    float2 sampleLensPoint = SampleCircle(Random2()) * LENS_RADIUS;
+    float3 lensPoint = lensCenter + CAMERA_RIGHT * sampleLensPoint.x + CAMERA_UP * sampleLensPoint.y;
+    float lensArea = PI * LENS_RADIUS * LENS_RADIUS;
+    float3 focalDir = normalize(lensCenter - sensorPoint);
+    float3 focalPoint = lensCenter + focalDir * (FOCUS_DISTANCE / dot(focalDir, CAMERA_DIR));
+    float3 lensDir = lensPoint - sensorPoint;
+    float dist = length(lensDir);
+    float cosTheta = dot(normalize(lensDir), CAMERA_DIR);
+    ro = lensPoint;
+    rd = normalize(focalPoint - lensPoint);
+    return lensArea * cosTheta / (dist * dist);
+}
+
+float PinholeModel(float2 p, out float3 ro, out float3 rd)
+{
+    float3 sensorPoint = CAMERA_POS + (CAMERA_RIGHT * p.x + CAMERA_UP * p.y);
+    float3 lensCenter = CAMERA_POS + CAMERA_DIR * LENS_DISTANCE;
+    ro = sensorPoint;
+    rd = normalize(lensCenter - sensorPoint);
+    return III;
+}
+
+float3 PathTrace(float3 ro, float3 rd, float3 color, float3 weight)
+{
+    Surface surface = {0, 0, 0.0};
+    float3 hitPos = OOO;
+    float3 normal = OOI;
+    float3 acc = OOO;
+    float wBRDF = 1.0;
+    
     [loop]
-    for(int iter = 0; iter < ITER_MAX; iter++)
+    for (int bounce = 0; bounce <= BOUNCE_LIMIT; bounce++)
     {
-        float3 ro = ro0;
-        float3 rd = rd0;
-        float3 acc = OOO;
-        float3 weight = III;
-        float wBRDF = 1.0;
-        [loop]
-        for (int bounce = 0; bounce <= BOUNCE_LIMIT; bounce++)
-        {
-            hit = INTERSECTION_WITH_NORMAL(ro, rd, hitPos, s, n);
-            if(!hit) {
-                acc += color * weight;
-                break;
-            }
-            Material m = GET_MATERIAL(s, hitPos);
-            acc += m.emission * weight * wBRDF;
-            
-            float4 rand = Pcg01(float4(hitPos, FRAME_COUNT + iter * BOUNCE_LIMIT + bounce));
-#ifdef NEXT_EVENT_ESTIMATION
-            {
-                int lightId;
-                float3 lro = hitPos + n * EPS * 2.0;
-                float3 lLight = SAMPLE_LIGHT(rand.w, hitPos, lightId);
-                float pdfLight = SAMPLE_LIGHT_PDF(hitPos, lLight);
-                float3 hitLightPos;
-                Surface sLight;
-                bool hitLight = INTERSECTION(lro, lLight, hitLightPos, sLight);
-                if (hitLight && sLight.surfaceId == lightId)
-                {
-                    Material mLight = GET_MATERIAL(sLight, hitLightPos);
-                    float3 brdfLight;
-                    float pdfBrdf;
-                    float ndotl;
-                    SampleBRDF(rand.xy, m, n, false, -rd, lLight, hitPos, brdfLight, pdfBrdf, ndotl);
-                    acc += mLight.emission * brdfLight / max(pdfLight + pdfBrdf, 1e-20) * ndotl * weight;
-                }
-            }
-#endif
-
-            float3 brdf;
-            float pdf;
-            float ndotl;
-            ro = hitPos;
-            SampleBRDF(rand.xy, m, n, true, -rd, rd, ro, brdf, pdf, ndotl);
-            
-#ifdef NEXT_EVENT_ESTIMATION
-            float pdfLight = SAMPLE_LIGHT_PDF(hitPos, rd);
-            wBRDF = pdf / max(pdf + pdfLight, 1e-20);
-#endif
-            
-            weight *= brdf / max(pdf, 1e-20) * ndotl;
-
-            if (rand.z < RUSSIAN_ROULETTE){ break; }
-            weight /= (1.0 - RUSSIAN_ROULETTE);
-            
-            if (dot(weight, weight) < EPS) { break; }
+        bool hit = INTERSECTION_WITH_NORMAL(ro, rd, hitPos, surface, normal);
+        if(!hit) {
+            acc += color * weight;
+            break;
         }
-        sum += acc;
+        Material m = GET_MATERIAL(surface, hitPos);
+        acc += m.emission * weight * wBRDF;
+        
+        float4 rand = Random4();
+#ifdef NEXT_EVENT_ESTIMATION
+        {
+            int lightId;
+            float3 lro = hitPos + normal * EPS * 2.0;
+            float3 lLight = SAMPLE_LIGHT(rand.w, hitPos, lightId);
+            float pdfLight = SAMPLE_LIGHT_PDF(hitPos, lLight);
+            float3 hitLightPos;
+            Surface sLight;
+            bool hitLight = INTERSECTION(lro, lLight, hitLightPos, sLight);
+            if (hitLight && sLight.surfaceId == lightId)
+            {
+                Material mLight = GET_MATERIAL(sLight, hitLightPos);
+                float3 brdfLight;
+                float pdfBrdf;
+                float ndotl;
+                SampleBRDF(rand.xy, m, normal, false, -rd, lLight, hitPos, brdfLight, pdfBrdf, ndotl);
+                acc += mLight.emission * brdfLight / max(pdfLight + pdfBrdf, 1e-20) * ndotl * weight;
+            }
+        }
+#endif
+
+        float3 brdf;
+        float pdf;
+        float ndotl;
+        ro = hitPos;
+        SampleBRDF(rand.xy, m, normal, true, -rd, rd, ro, brdf, pdf, ndotl);
+        
+#ifdef NEXT_EVENT_ESTIMATION
+        float pdfLight = SAMPLE_LIGHT_PDF(hitPos, rd);
+        wBRDF = pdf / max(pdf + pdfLight, 1e-20);
+#endif
+        
+        weight *= brdf / max(pdf, 1e-20) * ndotl;
+
+        if (rand.z < RUSSIAN_ROULETTE){ break; }
+        weight /= (1.0 - RUSSIAN_ROULETTE);
+        
+        if (dot(weight, weight) < EPS) { break; }
     }
-    return sum / ITER_MAX;
+    return acc;
 }
 
 #endif
