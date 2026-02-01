@@ -60,4 +60,10 @@ float2 Pcg01(float2 v) { return Pcg01(asuint(v)); }
 float3 Pcg01(float3 v) { return Pcg01(asuint(v)); }
 float4 Pcg01(float4 v) { return Pcg01(asuint(v)); }
 
+static float4 randomSeed;
+float Random() { return randomSeed.x = Pcg01(randomSeed.x); }
+float2 Random2() { return randomSeed.xy = Pcg01(randomSeed.xy); }
+float3 Random3() { return randomSeed.xyz = Pcg01(randomSeed.xyz); }
+float4 Random4() { return randomSeed = Pcg01(randomSeed); }
+
 #endif
