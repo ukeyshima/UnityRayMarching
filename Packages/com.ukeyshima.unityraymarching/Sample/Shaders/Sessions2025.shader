@@ -80,7 +80,7 @@ Shader "Hidden/Sessions2025"
                 return length(p) * float2(co, si);
             }
 
-            float sdBox(float3 p, float3 mn, float3 mx, float w)
+            float SdBox(float3 p, float3 mn, float3 mx, float w)
             {
                 float3 size = float3(w, w, length(mx - mn));
                 float3 center = (mn + mx) * 0.5;
@@ -90,15 +90,15 @@ Shader "Hidden/Sessions2025"
                 up = normalize(cross(dir, x));
                 p -= center;
                 p = mul(float3x3(x, up, dir), p);
-                return sdBox(p, size * 0.5);
+                return SdBox(p, size * 0.5);
             }
 
             float sdWireframeBox(float3 p, float3 s, float e)
             {
-                float b = sdBox(p, float3(s.x, s.y, s.z));
-                b = max(b, -sdBox(p, float3(s.x * 2.0, s.y - e, s.z - e)));
-                b = max(b, -sdBox(p, float3(s.x - e, s.y * 2.0, s.z - e)));
-                b = max(b, -sdBox(p, float3(s.x - e, s.y - e, s.z * 2.0)));
+                float b = SdBox(p, float3(s.x, s.y, s.z));
+                b = max(b, -SdBox(p, float3(s.x * 2.0, s.y - e, s.z - e)));
+                b = max(b, -SdBox(p, float3(s.x - e, s.y * 2.0, s.z - e)));
+                b = max(b, -SdBox(p, float3(s.x - e, s.y - e, s.z * 2.0)));
                 return b;
             }
 
@@ -117,8 +117,8 @@ Shader "Hidden/Sessions2025"
                     p *= 3.0;
                     p.xyz -= 2.0;
                     p.z += 1.0;
-                    p.yz = mul(rotate2d(PI * 0.1 * time), p.yz);
-                    p.xz = mul(rotate2d(PI * 0.1 * time), p.xz);
+                    p.yz = mul(Rotate2d(PI * 0.1 * time), p.yz);
+                    p.xz = mul(Rotate2d(PI * 0.1 * time), p.xz);
                     p.z = abs(p.z);
                     p.z -= 1.0;
                 }
@@ -149,8 +149,8 @@ Shader "Hidden/Sessions2025"
                     seed = float4(minPos, 0);
                 }
                 float3 center = (minPos + maxPos) * 0.5;
-                float b = sdBox(p0 - center, size * 0.5 - gap * III);
-                float b1 = sdBox(p0, III * 0.95);
+                float b = SdBox(p0 - center, size * 0.5 - gap * III);
+                float b1 = SdBox(p0, III * 0.95);
                 b = max(b, -b1);
                 id = abs(p0.x) < 0.95 && abs(p0.y) < 0.95 && abs(p0.z) < 0.95 ? 1 : 0;
                 return b;
@@ -187,22 +187,22 @@ Shader "Hidden/Sessions2025"
                 
                 float w = s * 0.5;
                 float t = SATURATE(MOD((time - hilbertStartTime) * BPS * 8.0 * 2.0, maxCount) - id);
-                float b = abs(sdBox(p1, s)) + 0.1;
+                float b = abs(SdBox(p1, s)) + 0.1;
                 if (t > 0)
                 {
                     float3 mn = before * s;
                     float3 mx = OOO - before * w * 0.5;
                     mx = lerp(mn, mx, SATURATE(t * 2.0));
-                    b = min(b, sdBox(p1, mn, mx, w));
+                    b = min(b, SdBox(p1, mn, mx, w));
                 }
                 if (t > 0.5)
                 {
                     float3 mn = OOO - next * w * 0.5;
                     float3 mx = next * s;
                     mx = lerp(mn, mx, SATURATE(t * 2.0 - 1.0));
-                    b = min(b, sdBox(p1, mn, mx, w));      
+                    b = min(b, SdBox(p1, mn, mx, w));      
                 }
-                b = max(b, sdBox(p0, III * 0.99));
+                b = max(b, SdBox(p0, III * 0.99));
                 return b;
             }
 
@@ -216,10 +216,10 @@ Shader "Hidden/Sessions2025"
                 id = abs(p0.z) < 1 - thick ? id : 0;
                 id = step(0.7, Pcg01(id));
                 p1.z = MOD(p1.z, gap) - gap * 0.5;
-                float b = sdBox(p1, float3(1.0, 1.0, thick));
-                b = max(b, sdBox(p0, III));
-                b = min(b, sdBox(p0 - OOI, float3(1.0, 1.0, thick)));
-                b = min(b, sdBox(p0 - OOJ, float3(1.0, 1.0, thick)));
+                float b = SdBox(p1, float3(1.0, 1.0, thick));
+                b = max(b, SdBox(p0, III));
+                b = min(b, SdBox(p0 - OOI, float3(1.0, 1.0, thick)));
+                b = min(b, SdBox(p0 - OOJ, float3(1.0, 1.0, thick)));
                 return b;
             }
 
@@ -248,19 +248,19 @@ Shader "Hidden/Sessions2025"
                     float w = rcp(distance - pRot.w);
                     float3 pProj = pRot.xyz * w;
                     p[i].xyz = pProj;
-                    d = min(d, sdSphere(p0 - p[i], 0.05));
+                    d = min(d, SdSphere(p0 - p[i], 0.05));
                 }
                 [loop]
                 for (int i = 0; i < 4; i++)
                 {
-                    d = min(d, sdCapsule(p0, p[i], p[(i + 1) % 4], 0.025));
-                    d = min(d, sdCapsule(p0, p[i], p[i + 4], 0.025));
-                    d = min(d, sdCapsule(p0, p[i], p[i + 8], 0.025));
-                    d = min(d, sdCapsule(p0, p[i + 4], p[(i + 1) % 4 + 4], 0.025));
-                    d = min(d, sdCapsule(p0, p[i + 4], p[i + 12], 0.025));
-                    d = min(d, sdCapsule(p0, p[i + 8], p[(i + 1) % 4 + 8], 0.025));
-                    d = min(d, sdCapsule(p0, p[i + 8], p[i + 12], 0.025));
-                    d = min(d, sdCapsule(p0, p[i + 12], p[(i + 1) % 4 + 12], 0.025));
+                    d = min(d, SdCapsule(p0, p[i], p[(i + 1) % 4], 0.025));
+                    d = min(d, SdCapsule(p0, p[i], p[i + 4], 0.025));
+                    d = min(d, SdCapsule(p0, p[i], p[i + 8], 0.025));
+                    d = min(d, SdCapsule(p0, p[i + 4], p[(i + 1) % 4 + 4], 0.025));
+                    d = min(d, SdCapsule(p0, p[i + 4], p[i + 12], 0.025));
+                    d = min(d, SdCapsule(p0, p[i + 8], p[(i + 1) % 4 + 8], 0.025));
+                    d = min(d, SdCapsule(p0, p[i + 8], p[i + 12], 0.025));
+                    d = min(d, SdCapsule(p0, p[i + 12], p[(i + 1) % 4 + 12], 0.025));
                 }
                 return d;
             }
@@ -275,14 +275,14 @@ Shader "Hidden/Sessions2025"
                 if (rand.x < 0.5)
                 {
                     p1.xyz = p1.xzy;
-                    d = min(d, sdTorus(p1 - IOI * size * 0.5, float2(size * 0.5, 0.025)));
-                    d = min(d, sdTorus(p1 - JOJ * size * 0.5, float2(size * 0.5, 0.025)));
+                    d = min(d, SdTorus(p1 - IOI * size * 0.5, float2(size * 0.5, 0.025)));
+                    d = min(d, SdTorus(p1 - JOJ * size * 0.5, float2(size * 0.5, 0.025)));
                 }
                 else
                 {
                     p1.xyz = p1.xzy;
-                    d = min(d, sdTorus(p1 - IOJ * size * 0.5, float2(size * 0.5, 0.025)));
-                    d = min(d, sdTorus(p1 - JOI * size * 0.5, float2(size * 0.5, 0.025)));
+                    d = min(d, SdTorus(p1 - IOJ * size * 0.5, float2(size * 0.5, 0.025)));
+                    d = min(d, SdTorus(p1 - JOI * size * 0.5, float2(size * 0.5, 0.025)));
                 }
                 return d;
             }
@@ -295,8 +295,8 @@ Shader "Hidden/Sessions2025"
                 d = min(d, truchetWall(p0.zyx + OOI, 0.25));
                 d = min(d, truchetWall(p0.xzy + OOI, 0.25));
                 d = min(d, truchetWall(p0.xzy - OOI, 0.25));
-                float b = sdBox(p0, III);
-                b = max(b, -sdBox(p0, III * 0.99));
+                float b = SdBox(p0, III);
+                b = max(b, -SdBox(p0, III * 0.99));
                 d = max(-d, b);
                 id = abs(p0.x) < 0.99 && abs(p0.y) < 0.99 && abs(p0.z) < 0.99 ? 1 : 0;
                 return d;
@@ -318,7 +318,7 @@ Shader "Hidden/Sessions2025"
                     p1.w = p1.w * scale + 1.0;
 	            }
                 float b = (length(p1.xyz) - 10.0) / abs(p1.w) / 6.0;
-                b = max(b, -sdBox(p0, III * 0.95));
+                b = max(b, -SdBox(p0, III * 0.95));
                 id = abs(p0.x) < 0.95 && abs(p0.y) < 0.95 && abs(p0.z) < 0.95 ? 1 : 0;
                 return b;
             }
@@ -329,15 +329,15 @@ Shader "Hidden/Sessions2025"
                 float d0 = 0;
                 if (cubeType == 0) d0 = layeredCube(p - cubePos, objectID);
                 if (cubeType == 1) d0 = dividedCube(p - cubePos, objectID);
-                if (cubeType == 2) d0 = sdBox(p - cubePos, III);
+                if (cubeType == 2) d0 = SdBox(p - cubePos, III);
                 if (cubeType == 3) d0 = hilbertCube(p - cubePos);
                 if (cubeType == 4) d0 = ifsCube(p - cubePos);
                 if (cubeType == 5) d0 = hyperCube(p - cubePos);
                 if (cubeType == 6) d0 = truchetCube(p - cubePos, objectID);
                 if (cubeType == 7) d0 = mandelbox((p - cubePos), objectID);
-                float d11 = sdBox(p, III * roomSize);
-                float d12 = sdBox(p, III * roomSize);
-                float d2 = sdSphere(p - lightPos, lightRadius);
+                float d11 = SdBox(p, III * roomSize);
+                float d12 = SdBox(p, III * roomSize);
+                float d2 = SdSphere(p - lightPos, lightRadius);
                 Surface s0 = {0, objectID, d0};
                 objectID = 0;
                 if (wallType == 1)
@@ -353,8 +353,8 @@ Shader "Hidden/Sessions2025"
                 }
                 Surface s1 = {1, objectID, max(d11, -d12)};
                 Surface s2 = {2, 0, d2};
-                Surface s = minSurface(s0, s1);
-                s = minSurface(s, s2);
+                Surface s = MinSurface(s0, s1);
+                s = MinSurface(s, s2);
                 return s;
             }
             

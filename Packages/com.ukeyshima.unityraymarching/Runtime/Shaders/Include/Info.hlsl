@@ -18,7 +18,7 @@ struct Material
     float transmission;
 };
 
-Surface minSurface(Surface a, Surface b)
+Surface MinSurface(Surface a, Surface b)
 {
     if (a.distance < b.distance)
     {
@@ -27,7 +27,7 @@ Surface minSurface(Surface a, Surface b)
     return b;
 }
 
-Surface maxSurface(Surface a, Surface b)
+Surface MaxSurface(Surface a, Surface b)
 {
     if (a.distance > b.distance)
     {

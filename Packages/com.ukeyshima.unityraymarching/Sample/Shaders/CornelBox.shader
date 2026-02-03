@@ -70,21 +70,21 @@ Shader "Hidden/CornelBox"
 
             Surface Map(float3 p)
             {
-                Surface ceil = {0, 1, sdBox(p - float3(0.0, 100.0, 0.0), float3(100.0, 1.0, 100.0))};
-                Surface floor = {1, 1, sdBox(p + float3(0.0, 100.0, 0.0), float3(100.0, 1.0, 100.0))};
-                Surface backWall = {2, 1, sdBox(p - float3(0.0, 0.0, 99.0), float3(99.0, 99.0, 1.0))};
-                Surface rightWall = {3, 2, sdBox(p - float3(99, 0.0, 0.0), float3(1.0, 99.0, 99.0))};
-                Surface leftWall = {4, 3, sdBox(p + float3(99, 0.0, 0.0), float3(1.0, 99.0, 99.0))};
-                Surface light = {5, 4, sdSphere(p - _LightPos, _LightRadius)};
-                Surface box = {6, 5, sdBox(p - float3(-40.0, -40.0, 10.0), float3(30.0, 60.0, 30.0))};
-                Surface ball = {7, 6, sdSphere(p - float3(30.0, -70.0, -70.0), 30.0)};
-                Surface s = minSurface(ceil, floor);
-                s = minSurface(s, backWall);
-                s = minSurface(s, rightWall);
-                s = minSurface(s, leftWall);
-                s = minSurface(s, light);
-                s = minSurface(s, box);
-                s = minSurface(s, ball);
+                Surface ceil = {0, 1, SdBox(p - float3(0.0, 100.0, 0.0), float3(100.0, 1.0, 100.0))};
+                Surface floor = {1, 1, SdBox(p + float3(0.0, 100.0, 0.0), float3(100.0, 1.0, 100.0))};
+                Surface backWall = {2, 1, SdBox(p - float3(0.0, 0.0, 99.0), float3(99.0, 99.0, 1.0))};
+                Surface rightWall = {3, 2, SdBox(p - float3(99, 0.0, 0.0), float3(1.0, 99.0, 99.0))};
+                Surface leftWall = {4, 3, SdBox(p + float3(99, 0.0, 0.0), float3(1.0, 99.0, 99.0))};
+                Surface light = {5, 4, SdSphere(p - _LightPos, _LightRadius)};
+                Surface box = {6, 5, SdBox(p - float3(-40.0, -40.0, 10.0), float3(30.0, 60.0, 30.0))};
+                Surface ball = {7, 6, SdSphere(p - float3(30.0, -70.0, -70.0), 30.0)};
+                Surface s = MinSurface(ceil, floor);
+                s = MinSurface(s, backWall);
+                s = MinSurface(s, rightWall);
+                s = MinSurface(s, leftWall);
+                s = MinSurface(s, light);
+                s = MinSurface(s, box);
+                s = MinSurface(s, ball);
                 return s;
             }
             

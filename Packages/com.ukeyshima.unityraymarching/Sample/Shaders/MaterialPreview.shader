@@ -60,13 +60,13 @@ Shader "Hidden/MaterialPreview"
             {
                 float3 p1 = p;
                 p1.xz = MOD(p.xz, 10.0) - 5.0;
-                Surface light = {0, 0, sdSphere(p - _LightPos, _LightRadius)};
-                Surface floor = {1, 0, sdPlane(p, OIO, 3.0)};
-                Surface ball = {2, 0, sdSphere(p1, 3.0)};
+                Surface light = {0, 0, SdSphere(p - _LightPos, _LightRadius)};
+                Surface floor = {1, 0, SdPlane(p, OIO, 3.0)};
+                Surface ball = {2, 0, SdSphere(p1, 3.0)};
                 
                 Surface s = light;
-                s = minSurface(s, floor);
-                s = minSurface(s, ball);
+                s = MinSurface(s, floor);
+                s = MinSurface(s, ball);
                 return s;
             }
 

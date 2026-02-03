@@ -11,7 +11,7 @@
 #define CROSS(X, Y) float3((X).y * (Y).z - (X).z * (Y).y, (X).z * (Y).x - (X).x * (Y).z, (X).x * (Y).y - (X).y * (Y).x)
 #define SATURATE(A) clamp((A), 0.0, 1.0)
 #define PI (3.14159265359)
-#define TAU (6.28318530718)
+#define PI_TWO (6.28318530718)
 
 #define OO float2(0.0, 0.0)
 #define IO float2(1.0, 0.0)
@@ -142,7 +142,5 @@
 #define JJOJ float4(-1.0, -1.0, 0.0, -1.0)
 #define JJIJ float4(-1.0, -1.0, 1.0, -1.0)
 #define JJJJ float4(-1.0, -1.0, -1.0, -1.0)
-
-
 
 #endif

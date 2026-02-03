@@ -237,24 +237,24 @@ Shader "Hidden/Sessions2024"
                 float3 pSizeV = bSize * float3(1.0, 0.15, 1.0);
                 float3 pSizeH = bSize * float3(1.0, 1.0, 0.15);
 
-                float sdWall1 = sdBox(p1 - delta, wallWidth * III);
+                float sdWall1 = SdBox(p1 - delta, wallWidth * III);
                 sdWall1 = max(sdWall1,
                     -lerp(
-                        min(sdBox(p1 - wallWidth * IOO - delta, pSizeV), sdBox(p1 - wallWidth * IOO - delta, pSizeH)),
-                        sdBox(p1 - wallWidth * IOO - delta, bSize), 1.0 - SATURATE(dx)));
-                sdWall1 = max(sdWall1, sdBox(p, stairsTilingSize * 0.5));
+                        min(SdBox(p1 - wallWidth * IOO - delta, pSizeV), SdBox(p1 - wallWidth * IOO - delta, pSizeH)),
+                        SdBox(p1 - wallWidth * IOO - delta, bSize), 1.0 - SATURATE(dx)));
+                sdWall1 = max(sdWall1, SdBox(p, stairsTilingSize * 0.5));
 
-                float sdWall2 = sdBox(p1 + delta, wallWidth * III);
+                float sdWall2 = SdBox(p1 + delta, wallWidth * III);
                 sdWall2 = max(sdWall2,
                     -lerp(
-                        min(sdBox(p1 + wallWidth * IOO + delta, pSizeV), sdBox(p1 + wallWidth * IOO + delta, pSizeH)),
-                        sdBox(p1 + wallWidth * IOO + delta, bSize), 1.0 - SATURATE(dx)));
-                sdWall2 = max(sdWall2, sdBox(p, stairsTilingSize * 0.5));
+                        min(SdBox(p1 + wallWidth * IOO + delta, pSizeV), SdBox(p1 + wallWidth * IOO + delta, pSizeH)),
+                        SdBox(p1 + wallWidth * IOO + delta, bSize), 1.0 - SATURATE(dx)));
+                sdWall2 = max(sdWall2, SdBox(p, stairsTilingSize * 0.5));
 
                 Surface wall1 = {2, 0, sdWall1};
                 Surface wall2 = {2, 1, sdWall2};
 
-                return minSurface(wall1, wall2);
+                return MinSurface(wall1, wall2);
             }
 
             void LoadBallParams(float2 resolution)
@@ -316,34 +316,34 @@ Shader "Hidden/Sessions2024"
                 float3 ballPosCenter = (ballPosMax + ballPosMin) * 0.5;
                 float3 ballArea = ballPosMax - ballPosMin;
 
-                s = minSurface(s, WallMap(p));
+                s = MinSurface(s, WallMap(p));
 
                 float3 p1 = p - float3(0.0, 19.0, 75.0);
                 p1.x -= 4.0;
-                p1.xz = mul(rotate2d(lerp(0.0, -PI * 0.75, SATURATE((_ElapsedTime - phasePeriod[11] - 3.0) * 0.15))), p1.xz);
+                p1.xz = mul(Rotate2d(lerp(0.0, -PI * 0.75, SATURATE((_ElapsedTime - phasePeriod[11] - 3.0) * 0.15))), p1.xz);
                 p1.x += 4.0;
-                Surface door = {3, 0, sdBox(p1, float3(4.0, 9.0, wallWidth * 0.5))};
-                s = minSurface(s, door);
+                Surface door = {3, 0, SdBox(p1, float3(4.0, 9.0, wallWidth * 0.5))};
+                s = MinSurface(s, door);
 
                 Surface doorWall = {4, 0, max(
-                    sdBox(p - float3(0.0, 40.0, stairsTilingSize * 0.5), float3(stairsWidth * 1.2, 30.0, wallWidth)),
-                    -sdBox(p - float3(0.0, 19.0, 75.0), float3(4.0, 9.0, wallWidth * 1.1)))
+                    SdBox(p - float3(0.0, 40.0, stairsTilingSize * 0.5), float3(stairsWidth * 1.2, 30.0, wallWidth)),
+                    -SdBox(p - float3(0.0, 19.0, 75.0), float3(4.0, 9.0, wallWidth * 1.1)))
                 };
-                s = minSurface(s, doorWall);
+                s = MinSurface(s, doorWall);
 
-                Surface monitor = {1, 0, sdBox(p - float3(0.0, 32.0, 73.0), float3(5.333, 3.0, wallWidth * 0.5))};
-                s = minSurface(s, monitor);
+                Surface monitor = {1, 0, SdBox(p - float3(0.0, 32.0, 73.0), float3(5.333, 3.0, wallWidth * 0.5))};
+                s = MinSurface(s, monitor);
 
                 Surface room = {5, 0, max(
-                    sdBox(p - ballPosCenter, ballArea * 0.5),
-                    -sdBox(p - ballPosCenter + float3(0.0, 0.0, 20.0), ballArea * 0.5 - float3(5.0, 5.0, 5.0)))
+                    SdBox(p - ballPosCenter, ballArea * 0.5),
+                    -SdBox(p - ballPosCenter + float3(0.0, 0.0, 20.0), ballArea * 0.5 - float3(5.0, 5.0, 5.0)))
                 };
-                s = minSurface(s, room);
+                s = MinSurface(s, room);
 
                 for(int i = 0; i < ballNum; i++){
-                    float sd = sdSphere(p - ballPos[i], ballRadius);
+                    float sd = SdSphere(p - ballPos[i], ballRadius);
                     Surface ball = {6, i, sd};
-                    s = minSurface(s, ball);
+                    s = MinSurface(s, ball);
                 }
 
                 return s;
