@@ -50,15 +50,15 @@ uint4 Pcg4d(uint4 v)
     return v;
 }
 
-float Pcg01(uint v) { return Pcg(v) / FLOAT_MAX; }
-float2 Pcg01(uint2 v) { return Pcg2d(v) / FLOAT_MAX; }
-float3 Pcg01(uint3 v) { return Pcg3d(v) / FLOAT_MAX; }
-float4 Pcg01(uint4 v) { return Pcg4d(v) / FLOAT_MAX; }
+float Pcg01(uint v) { return float(Pcg(v)) / FLOAT_MAX; }
+float2 Pcg01(uint2 v) { return float2(Pcg2d(v)) / FLOAT_MAX; }
+float3 Pcg01(uint3 v) { return float3(Pcg3d(v)) / FLOAT_MAX; }
+float4 Pcg01(uint4 v) { return float4(Pcg4d(v)) / FLOAT_MAX; }
 
-float Pcg01(float v) { return Pcg01(asuint(v)); }
-float2 Pcg01(float2 v) { return Pcg01(asuint(v)); }
-float3 Pcg01(float3 v) { return Pcg01(asuint(v)); }
-float4 Pcg01(float4 v) { return Pcg01(asuint(v)); }
+float Pcg01(float v) { return Pcg01(ASUINT(v)); }
+float2 Pcg01(float2 v) { return Pcg01(ASUINT(v)); }
+float3 Pcg01(float3 v) { return Pcg01(ASUINT(v)); }
+float4 Pcg01(float4 v) { return Pcg01(ASUINT(v)); }
 
 static float4 randomSeed;
 float Random() { return randomSeed.x = Pcg01(randomSeed.x); }

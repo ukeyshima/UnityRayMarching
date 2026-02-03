@@ -35,7 +35,7 @@ float GGXPDF(float3 N, float3 V, float3 L, float3 H, float roughness, float EI, 
     return nom * jacobian;
 }
 
-float VisibleSpherePDF(float3 r, float3 c, float3 p, float3 l)
+float VisibleSpherePDF(float r, float3 c, float3 p, float3 l)
 {
     float3 diff = c - p;
     if (dot(diff, diff) < 1e-20) return 0.0;

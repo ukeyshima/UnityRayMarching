@@ -13,7 +13,7 @@ float2 SampleCircle(float2 xi)
 float3 SampleSphereWeighted(float2 xi, float3 dir, float w)
 {
 	float phi = 2.0 * PI * xi.x;
-	float cosTheta = lerp(w, 1.0, xi.y);
+	float cosTheta = LERP(w, 1.0, xi.y);
 	float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 	float3 h = float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
 	float3 up = abs(dir.z) < 0.999 ? float3(0, 0, 1) : float3(1, 0, 0);
@@ -32,7 +32,7 @@ float3 SampleHemiSphere(float2 xi, float3 n)
 	return SampleSphereWeighted(xi, n, 0.0);
 }
 
-float3 SampleVisibleSphere(float2 xi, float3 r, float3 c, float3 p)
+float3 SampleVisibleSphere(float2 xi, float r, float3 c, float3 p)
 {
 	float3 diff = c - p;
 	float3 dir = normalize(diff);

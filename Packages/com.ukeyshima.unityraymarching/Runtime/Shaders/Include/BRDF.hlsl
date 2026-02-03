@@ -62,7 +62,7 @@ float3 MicrofacetGGXBTDF(float3 N, float3 V, float3 L, float3 H, float3 F0, floa
     float D = DistributionGGX(NdotH, roughness);
     float r = roughness + 1.0;
     float k = r * r / 8.0;
-    float3 nom = VdotH * LdotH * EO * EO * D * (1 - F);
+    float3 nom = VdotH * LdotH * EO * EO * D * (1.0 - F);
     float sqrtDenom = EI * VdotH + EO * LdotH;
     float denom = sqrtDenom * sqrtDenom * (NdotV * (1.0 - k) + k) * (NdotL * (1.0 - k) + k);
     return nom / max(denom, 1e-20);
