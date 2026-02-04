@@ -137,13 +137,12 @@ Shader "Hidden/CornelBox"
                 randomSeed = Pcg01(float4(p, _FrameCount, Pcg(_FrameCount)));
                 float3 ro, rd;
                 float3 col = OOO;
-                float3 weight = III;
                 for (int iter = 0; iter < _IterMax; iter++)
                 {
 #ifdef _CAMERA_THINLENS
-                    weight *= ThinLensModel(p, ro, rd) * _Exposure * III;
+                    float3 weight = ThinLensModel(p, ro, rd) * _Exposure * III;
 #else
-                    weight *= PinholeModel(p, ro, rd);
+                    float3 weight = PinholeModel(p, ro, rd);
 #endif
                     col += SAMPLE_RADIANCE(ro, rd, OOO, weight);    
                 }
