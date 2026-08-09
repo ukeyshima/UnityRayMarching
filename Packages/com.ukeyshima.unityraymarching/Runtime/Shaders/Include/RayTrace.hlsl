@@ -3,26 +3,66 @@
 
 #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Common.hlsl"
 #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Info.hlsl"
+#include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Pcg.hlsl"
 #include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/RayMarch.hlsl"
+#include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/Sampling.hlsl"
+#include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/BRDF.hlsl"
+#include "Packages/com.ukeyshima.unityraymarching/Runtime/Shaders/Include/PDF.hlsl"
 
 #ifndef GET_MATERIAL
 #define GET_MATERIAL(S, RP) {IOI, 0, OOO}
 #endif
 
 #ifndef SAMPLE_LIGHT
-#define SAMPLE_LIGHT(X) {0, float3(0, 0, 0)}
+#define SAMPLE_LIGHT(X, P, ID) OOO
+#endif
+
+#ifndef SAMPLE_LIGHT_PDF
+#define SAMPLE_LIGHT_PDF(P, L) 0.0
 #endif
 
 #ifndef RUSSIAN_ROULETTE
 #define RUSSIAN_ROULETTE 0.0
 #endif
 
-#ifndef ITER_MAX
-#define ITER_MAX 1
-#endif
-
 #ifndef BOUNCE_LIMIT
 #define BOUNCE_LIMIT 1
+#endif
+
+#ifndef RAY_SURFACE_OFFSET
+#define RAY_SURFACE_OFFSET 1e-2
+#endif
+
+#ifndef FRAME_COUNT
+#define FRAME_COUNT 1
+#endif
+
+#ifndef FOCUS_DISTANCE
+#define FOCUS_DISTANCE 10.0
+#endif
+
+#ifndef LENS_DISTANCE
+#define LENS_DISTANCE 1.0
+#endif
+
+#ifndef LENS_RADIUS
+#define LENS_RADIUS 1.0
+#endif
+
+#ifndef CAMERA_POS
+#define CAMERA_POS OOO
+#endif
+
+#ifndef CAMERA_RIGHT
+#define CAMERA_RIGHT IOO
+#endif
+
+#ifndef CAMERA_UP
+#define CAMERA_UP OIO
+#endif
+
+#ifndef CAMERA_DIR
+#define CAMERA_DIR OOI
 #endif
 
 #ifndef INTERSECTION
@@ -33,10 +73,9 @@
 #define INTERSECTION_WITH_NORMAL(RO, RD, HIT_POS, SURFACE, NORMAL) (RayMarching(RO, RD, HIT_POS, SURFACE, NORMAL))
 #endif
 
-#define REFLECT_THRESHOLD 0.01
-#define LAMBERT_THRESHOLD 0.99
+#define ROUGHNESS_MIN 1e-4
 
-float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
+float3 Unlit(float3 ro, float3 rd, float3 color)
 {
     float3 hitPos;
     Surface s;
@@ -45,15 +84,12 @@ float3 Unlit(float3 ro, float3 rd, float3 color, out float3 pos, out float3 norm
     if(hit)
     {
         Material m = GET_MATERIAL(s, hitPos);
-        pos = hitPos;
-        normal = n;
-        surface = s;
         return m.baseColor;
     }
     return color;
 }
 
-float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 normal, out Surface surface)
+float3 Diffuse(float3 ro, float3 rd, float3 color)
 {
     float3 hitPos;
     Surface s;
@@ -62,126 +98,152 @@ float3 Diffuse(float3 ro, float3 rd, float3 color, out float3 pos, out float3 no
     if(hit)
     {
         Material m = GET_MATERIAL(s, hitPos);
-        pos = hitPos;
-        normal = n;
-        surface = s;
         return dot(n, -rd) * m.baseColor;
     }
     return color;
 }
 
-void CalcBRDFAndPDF(float r, float3 n, float3 v, float3 c, float3 rd, out float3 brdf, out float pdf)
+void SampleBRDF(float2 xi, Material m, float3 n, bool withSample, in float3 v, inout float3 l, inout float3 ro, out float3 brdf, out float pdf, out float ndotl)
 {
-    if (r <= REFLECT_THRESHOLD)
+    bool entering = dot(v, n) > 0.0;
+    float3 normal = entering ? n : -n;
+    float ior = max(m.refraction, 1.0);
+    float etaI = entering ? 1.0 : ior;
+    float etaO = entering ? ior : 1.0;
+    float r = max(m.roughness, ROUGHNESS_MIN);
+    float3 F0 = lerp(pow((ior - 1.0) / (ior + 1.0), 2.0) * III, m.baseColor, m.metallic);
+    float3 albedo = lerp(m.baseColor, OOO, m.metallic);
+    float3 F = FresnelSchlick(dot(v, normal), F0);
+    
+    float wSpec = (F.x + F.y + F.z) / 3.0;
+    float wDiff = (1.0 - wSpec) * (1.0 - m.transmission);
+    float wTrans = (1.0 - wSpec) * m.transmission;
+    
+    if (withSample)
     {
-        brdf = FresnelSchlick(max(dot(rd, v), 0.0), c);
-        pdf = 1.0; 
-    }
-    else if(r > LAMBERT_THRESHOLD)
-    {
-        brdf = LambertBRDF(c);
-        pdf = LambertPDF(n, rd);
-    }
-    else
-    {
-        brdf = MicrofacetGGXBRDF(n, v, rd, c, r);
-        pdf = GGXPDF(n, v, rd, r);
-    }
-}
-
-void CalcBRDFAndPDF(float2 xi, float r, float3 n, float3 v, float3 c, inout float3 rd, out float3 brdf, out float pdf)
-{
-    if (r <= REFLECT_THRESHOLD) { rd = reflect(rd, n); }
-    else if(r > LAMBERT_THRESHOLD) { rd = SampleHemiSphere(xi, n); }
-    else { rd = ImportanceSampleGGX(xi, r, n, rd); }
-    CalcBRDFAndPDF(r, n, v, c, rd, brdf, pdf);
-}
-
-float3 PathTrace(float3 ro0, float3 rd0, float3 color, out float3 pos, out float3 normal, out Surface surface)
-{
-    float3 sum = OOO;
-    Surface s;
-    float3 hitPos;
-    float3 n;
-    bool hit = INTERSECTION_WITH_NORMAL(ro0, rd0, hitPos, s, n);
-    if(hit)
-    {
-        ro0 = hitPos;
-        pos = hitPos;
-        normal = n;
-        surface = s;
-    }
-    else
-    {
-        return color;
-    }
-    [loop]
-    for(int iter = 0; iter < ITER_MAX; iter++)
-    {
-        float3 ro = ro0;
-        float3 rd = rd0;
-        float3 acc = OOO;
-        float3 weight = III;
-        [loop]
-        for (int bounce = 0; bounce <= BOUNCE_LIMIT; bounce++)
+        float2 x = Random2();
+        if (x.x < wSpec)
         {
-            hit = INTERSECTION_WITH_NORMAL(ro, rd, hitPos, s, n);
-            if(!hit) {
-                acc += color * weight;
-                break;
-            }
-            Material m = GET_MATERIAL(s, hitPos);
-            float3 e = m.emission;
-            float r = m.roughness;
-            float3 c = m.baseColor;
-            float3 v = -rd;
-            float4 rand = Pcg01(float4(hitPos, iter * BOUNCE_LIMIT + bounce + _ElapsedTime));
-
-            ro = hitPos + n * EPS * 2.0;
-            
-            float3 brdf;
-            float pdf;
-            CalcBRDFAndPDF(rand.xy, r, n, v, c, rd, brdf, pdf);
-            
-            float w = 1.0;
-#ifdef NEXT_EVENT_ESTIMATION
-            if (dot(e, e) < EPS && r > REFLECT_THRESHOLD)
-            {
-                SamplePos sampleLight = SAMPLE_LIGHT(rand.w);
-                float3 rd_light = normalize(sampleLight.position - ro);
-                float3 hit_lightPos;
-                Surface s_light;
-                bool hit_light = INTERSECTION(ro, rd_light, hit_lightPos, s_light);
-                if (hit_light && s_light.objectId == sampleLight.objectId)
-                {
-                    Material m_light = GET_MATERIAL(s_light, hit_lightPos);
-                    float3 e_light = m_light.emission;
-                    float3 brdf_light;
-                    float pdf_light;
-                    CalcBRDFAndPDF(r, n, v, c, rd_light, brdf_light, pdf_light);
-                    float pdf_sq = pdf * pdf;
-                    float pdf_light_sq = pdf_light * pdf_light;
-                    float sum_sq = pdf_sq + pdf_light_sq;
-                    float w_light = pdf_light_sq / sum_sq;
-                    w = pdf_sq / sum_sq;
-                    float weight_light = brdf_light / pdf_light * max(dot(rd_light, n), 0.0) * w_light * weight;
-                    acc += e_light * weight_light;
-                }
-            }   
-#endif
-            
-            acc += e * weight * w;
-            weight *= brdf / pdf * max(dot(rd, n), 0.0);
-
-            float rr_prob = RUSSIAN_ROULETTE;
-            if (rand.z < rr_prob){ break; }
-            weight /= (1.0 - rr_prob);
-            
-            if (dot(weight, weight) < EPS) { break; }
+            l = reflect(-v, ImportanceSampleGGX(xi, r, normal));
+            ndotl = max(dot(normal, l), 0.0);
+            ro = ro + normal * RAY_SURFACE_OFFSET;
         }
-        sum += acc;
+        else if (x.x < wSpec + wDiff)
+        {
+            l = ImportanceSampleCosine(xi, normal);
+            ndotl = max(dot(normal, l), 0.0);
+            ro = ro + normal * RAY_SURFACE_OFFSET;
+        }
+        else
+        {
+            float3 h = ImportanceSampleGGX(xi, r, normal);
+            l = refract(-v, h, etaI / etaO);
+            ndotl = max(-dot(normal, l), 0.0);
+            ro = ro - normal * RAY_SURFACE_OFFSET;
+        }
     }
-    return sum / ITER_MAX;
+    else
+    {
+        ndotl = max(dot(normal, l), 0.0);
+    }
+    
+    float3 h = normalize(v + l);
+    float3 hTrans = -normalize(l * etaO + v * etaI);
+    F = FresnelSchlick((dot(v, h)), F0);
+    brdf = MicrofacetGGXBRDF(normal, v, l, h, F0, r) +
+           LambertBRDF(n, v, l, albedo) * (1.0 - F) * (1.0 - m.transmission) +
+           MicrofacetGGXBTDF(normal, v, l, hTrans, F0, r, etaI, etaO) * m.baseColor * m.transmission;
+    pdf = GGXPDF(normal, v, h, r) * wSpec +
+          LambertPDF(normal, l) * wDiff +
+          GGXPDF(normal, v, l, hTrans, r, etaI, etaO) * wTrans;
+}
+
+float ThinLensModel(float2 p, out float3 ro, out float3 rd)
+{
+    float3 lensCenter = CAMERA_POS + CAMERA_DIR * LENS_DISTANCE;
+    float3 sensorPoint = CAMERA_POS + CAMERA_RIGHT * p.x + CAMERA_UP * p.y;
+    float2 sampleLensPoint = SampleCircle(Random2()) * LENS_RADIUS;
+    float3 lensPoint = lensCenter + CAMERA_RIGHT * sampleLensPoint.x + CAMERA_UP * sampleLensPoint.y;
+    float lensArea = PI * LENS_RADIUS * LENS_RADIUS;
+    float3 focalDir = normalize(lensCenter - sensorPoint);
+    float3 focalPoint = lensCenter + focalDir * (FOCUS_DISTANCE / dot(focalDir, CAMERA_DIR));
+    float3 lensDir = lensPoint - sensorPoint;
+    float dist = length(lensDir);
+    float cosTheta = dot(normalize(lensDir), CAMERA_DIR);
+    ro = lensPoint;
+    rd = normalize(focalPoint - lensPoint);
+    return lensArea * cosTheta / (dist * dist);
+}
+
+float PinholeModel(float2 p, out float3 ro, out float3 rd)
+{
+    float3 sensorPoint = CAMERA_POS + (CAMERA_RIGHT * p.x + CAMERA_UP * p.y);
+    float3 lensCenter = CAMERA_POS + CAMERA_DIR * LENS_DISTANCE;
+    ro = sensorPoint;
+    rd = normalize(lensCenter - sensorPoint);
+    return III;
+}
+
+float3 PathTrace(float3 ro, float3 rd, float3 color, float3 weight)
+{
+    Surface surface = {0, 0, 0.0};
+    float3 hitPos = OOO;
+    float3 normal = OOI;
+    float3 acc = OOO;
+    float wBRDF = 1.0;
+    
+    [loop]
+    for (int bounce = 0; bounce <= BOUNCE_LIMIT; bounce++)
+    {
+        bool hit = INTERSECTION_WITH_NORMAL(ro, rd, hitPos, surface, normal);
+        if(!hit) {
+            acc += color * weight;
+            break;
+        }
+        Material m = GET_MATERIAL(surface, hitPos);
+        acc += m.emission * weight * wBRDF;
+        
+        float4 rand = Random4();
+#ifdef NEXT_EVENT_ESTIMATION
+        {
+            int lightId;
+            float3 lro = hitPos + normal * RAY_SURFACE_OFFSET;
+            float3 lLight = SAMPLE_LIGHT(rand.w, hitPos, lightId);
+            float pdfLight = SAMPLE_LIGHT_PDF(hitPos, lLight);
+            float3 hitLightPos;
+            Surface sLight;
+            bool hitLight = INTERSECTION(lro, lLight, hitLightPos, sLight);
+            if (hitLight && sLight.surfaceId == lightId)
+            {
+                Material mLight = GET_MATERIAL(sLight, hitLightPos);
+                float3 brdfLight;
+                float pdfBrdf;
+                float ndotl;
+                SampleBRDF(rand.xy, m, normal, false, -rd, lLight, hitPos, brdfLight, pdfBrdf, ndotl);
+                acc += mLight.emission * brdfLight / max(pdfLight + pdfBrdf, 1e-20) * ndotl * weight;
+            }
+        }
+#endif
+
+        float3 brdf;
+        float pdf;
+        float ndotl;
+        ro = hitPos;
+        SampleBRDF(rand.xy, m, normal, true, -rd, rd, ro, brdf, pdf, ndotl);
+        
+#ifdef NEXT_EVENT_ESTIMATION
+        float pdfLight = SAMPLE_LIGHT_PDF(hitPos, rd);
+        wBRDF = pdf / max(pdf + pdfLight, 1e-20);
+#endif
+        
+        weight *= brdf / max(pdf, 1e-20) * ndotl;
+
+        if (rand.z < RUSSIAN_ROULETTE){ break; }
+        weight /= (1.0 - RUSSIAN_ROULETTE);
+        
+        if (dot(weight, weight) < 1e-20) { break; }
+    }
+    return acc;
 }
 
 #endif

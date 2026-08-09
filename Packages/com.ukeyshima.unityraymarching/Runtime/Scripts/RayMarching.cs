@@ -59,15 +59,18 @@ namespace UnityRayMarching
 
         protected void Render(ShaderUniformData data, RenderTexture target)
         {
+            RenderTexture backBuffer = RenderTexture.GetTemporary(data.Resolution.x, data.Resolution.y, 0, RenderTextureFormat.ARGBFloat);
             RenderTexture normalDepth = RenderTexture.GetTemporary(data.Resolution.x, data.Resolution.y, 0, RenderTextureFormat.ARGBFloat);
             RenderTexture position =  RenderTexture.GetTemporary(data.Resolution.x, data.Resolution.y, 0, RenderTextureFormat.ARGBFloat);
             RenderTexture id =  RenderTexture.GetTemporary(data.Resolution.x, data.Resolution.y, 0, RenderTextureFormat.ARGBFloat);
             RenderBuffer[] colorBuffers = {data.RenderBuffer.colorBuffer, normalDepth.colorBuffer, position.colorBuffer, id.colorBuffer};
             
+            Graphics.Blit(data.RenderBuffer, backBuffer);
+            
             _material.SetFloat("_FrameCount", data.FrameCount);
             _material.SetFloat("_ElapsedTime", Time.timeSinceLevelLoad);
             _material.SetVector("_Resolution", new Vector2(data.Resolution.x, data.Resolution.y));
-            _material.SetTexture("_BackBuffer", data.RenderBuffer);
+            _material.SetTexture("_BackBuffer", backBuffer);
             if (Camera.current != null)
             {
                 _material.SetVector("_CameraPos", Camera.current.transform.position);
@@ -84,6 +87,7 @@ namespace UnityRayMarching
             {
                 _postProcess.Render(data, target, normalDepth, position, id);
             }
+            RenderTexture.ReleaseTemporary(backBuffer);
             RenderTexture.ReleaseTemporary(normalDepth);
             RenderTexture.ReleaseTemporary(position);
             RenderTexture.ReleaseTemporary(id);
@@ -91,9 +95,9 @@ namespace UnityRayMarching
 
         protected virtual void MRTBlit(RenderTexture source, RenderBuffer[] destColors, RenderBuffer destDepth, Material material)
         {
+            Graphics.SetRenderTarget(destColors, destDepth);
             material.SetPass(0);
             material.mainTexture = source;
-            Graphics.SetRenderTarget(destColors, destDepth);
             GL.PushMatrix();
             GL.LoadOrtho();
             GL.Begin(GL.QUADS);

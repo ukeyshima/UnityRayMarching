@@ -1,11 +1,10 @@
 #ifndef COMMON_INCLUDED
 #define COMMON_INCLUDED
 
-#ifndef EPS
-#define EPS 0.005
-#endif
 #define FLOAT_MAX float(0xffffffffu)
 #define FLOAT_MIN 1.17549435e-38f
+#define PI (3.14159265359)
+#define PI_TWO (6.28318530718)
 #define MOD(A, B) ((A) - (B) * floor((A) / (B)))
 #define MIN2(A) (min((A).x, (A).y))
 #define MIN3(A) (min((A).x, min((A).y, (A).z)))
@@ -13,8 +12,9 @@
 #define MAX3(A) (max((A).x, max((A).y, (A).z)))
 #define CROSS(X, Y) float3((X).y * (Y).z - (X).z * (Y).y, (X).z * (Y).x - (X).x * (Y).z, (X).x * (Y).y - (X).y * (Y).x)
 #define SATURATE(A) clamp((A), 0.0, 1.0)
-#define PI (3.14159265359)
-#define TAU (6.28318530718)
+#define LERP(A, B, T) ((1.0 - (T)) * (A) + (T) * (B))
+#define ASINT(A) asint((A))
+#define ASUINT(A) asuint((A))
 
 #define OO float2(0.0, 0.0)
 #define IO float2(1.0, 0.0)
@@ -145,7 +145,5 @@
 #define JJOJ float4(-1.0, -1.0, 0.0, -1.0)
 #define JJIJ float4(-1.0, -1.0, 1.0, -1.0)
 #define JJJJ float4(-1.0, -1.0, -1.0, -1.0)
-
-
 
 #endif
